@@ -679,7 +679,7 @@ namespace CrossworldsModManager
             // Fetch the latest GameBanana version counter and store it separately as GBVersion
             try
             {
-                var latestVersion = await GameBananaApiService.GetLatestModVersionAsync(_mod.ModelName, _mod.Id);
+                var latestVersion = await GameBananaApiService.GetLatestModUpdateCountAsync(_mod.ModelName, _mod.Id);
                 if (!string.IsNullOrWhiteSpace(latestVersion))
                 {
                     iniData["GameBanana"]["GBVersion"] = latestVersion;
@@ -695,7 +695,28 @@ namespace CrossworldsModManager
                 {
                     iniData["GameBanana"]["GBVersion"] = "0";
                 }
+            };
+
+            // Set raw version in x.y.z...n format
+            try
+            {
+                var latestRawVersion = await GameBananaApiService.GetLatestModVersionAsync(_mod.ModelName, _mod.Id);
+                if (!string.IsNullOrWhiteSpace(latestRawVersion))
+                {
+                    iniData["Main"]["Version"] = latestRawVersion;
+                }
+                else if (!iniData["Main"].ContainsKey("Version"))
+                {
+                    iniData["Main"]["Version"] = "0.0";
+                }
             }
+            catch
+            {
+                if (!iniData["Main"].ContainsKey("Version"))
+                {
+                    iniData["Main"]["Version"] = "0.0";
+                }
+            };
 
             // Set the author in [Main] to the GameBanana mod author for installs
             // originating from the browser or 1-Click flow.
