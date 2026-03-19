@@ -37,7 +37,10 @@ namespace CrossworldsModManager
             try
             {
                 // 1. Get Steam path
-                var steamInstallPath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share", "Steam");
+                var steamInstallPath =
+                    Path.Exists(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share", "Steam"))
+                        ? Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share", "Steam")
+                        : Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".steam", "steam");
 
                 // 2. Find all library folders
                 var libraryFoldersFile = Path.Combine(steamInstallPath, "steamapps", "libraryfolders.vdf");
