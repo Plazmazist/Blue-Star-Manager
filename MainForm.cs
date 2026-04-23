@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using NativeFileDialogs.AutoGen;
+using NativeFileDialogs.Net;
 using SharpCompress.Archives;
 using SharpCompress.Common;
 
@@ -538,18 +540,21 @@ namespace CrossworldsModManager
                 
                 if (!pathSet)
                 {
-                    using (var ofd = new CustomFileBrowser())
+                    Dictionary<string, string> filters = new Dictionary<string, string>
                     {
-                        ofd.Text = "Select Game Executable (SonicRacingCrossWorlds.exe)";
-                        ofd.Filter = "SonicRacingCrossWorlds.exe|SonicRacingCrossWorlds.exe";
-                        if (ofd.ShowDialog() == DialogResult.OK)
-                        {
-                            SettingsManager.Settings.GameDirectory = Path.GetDirectoryName(ofd.FileName);
-                            SettingsManager.Settings.GameExecutableName = Path.GetFileName(ofd.FileName);
-                            SettingsManager.Save();
-                        }
-                        else return; // Cancelled, do not switch platform
+                        {"Game Executable", "SonicRacingCrossWorlds.exe"}
+                    };
+                    // TODO: add titlebar text when NativeFileDialogs supports it
+                    NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
+
+                    if (result == NfdStatus.Ok)
+                    {
+                        if (fileName == null) return;
+                        SettingsManager.Settings.GameDirectory = Path.GetDirectoryName(fileName);
+                        SettingsManager.Settings.GameExecutableName = Path.GetFileName(fileName);
+                        SettingsManager.Save();
                     }
+                    else return;
                 }
             }
 
@@ -2120,28 +2125,26 @@ namespace CrossworldsModManager
         private void PromptForModsDirectory()
         {
             CustomMessageBox.Show("Welcome! Please select a folder to store your mods.", "First-Time Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            using (var fbd = new CustomFileBrowser())
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.PickFolder(out string? dir);
+            while (true)
             {
-                fbd.Mode = CustomFileBrowser.BrowserMode.SelectFolder;
-                fbd.Text = "Select or create a folder to store your mods";
-                while (true)
+                if (result == NfdStatus.Ok)
                 {
-                    if (fbd.ShowDialog() == DialogResult.OK)
+                    if (dir == null) continue;
+                    var dirName = new DirectoryInfo(dir).Name;
+                    if (dirName.Equals("~mods", StringComparison.OrdinalIgnoreCase))
                     {
-                        var dirName = new DirectoryInfo(fbd.SelectedPath).Name;
-                        if (dirName.Equals("~mods", StringComparison.OrdinalIgnoreCase))
-                        {
-                            CustomMessageBox.Show("You cannot select the game's '~mods' folder as your mod storage directory.\n\nThis folder is used by the manager to install mods. Please select a different folder to store your source mods.", "Invalid Directory", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            continue;
-                        }
-                        SettingsManager.Settings.ModsDirectory = fbd.SelectedPath;
-                        SettingsManager.Save();
-                        break;
+                        CustomMessageBox.Show("You cannot select the game's '~mods' folder as your mod storage directory.\n\nThis folder is used by the manager to install mods. Please select a different folder to store your source mods.", "Invalid Directory", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        continue;
                     }
-                    // User cancelled. The app might not be fully functional, but let it load.
-                    UpdateStatus("Warning: Mods directory not selected.");
+
+                    SettingsManager.Settings.ModsDirectory = dir;
+                    SettingsManager.Save();
                     break;
                 }
+                UpdateStatus("Warning: Mods directory not selected.");
+                break;
             }
         }
 
@@ -2152,60 +2155,61 @@ namespace CrossworldsModManager
                 CustomMessageBox.Show("The mods directory is not configured. Please set it in Settings before adding mods.", "Mods Directory Not Set", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-
-            using (var ofd = new CustomFileBrowser())
+            
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                ofd.Text = "Select Mod Archive";
-                ofd.Filter = "Mod Archives|*.zip;*.7z;*.rar;*.tar;*.tar.gz;*.tar.xz;*.tar.zst;*.tar.bz2;*.tar.lz|All files (*.*)|*.*";
-                ofd.Multiselect = true;
-        
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    int successCount = 0;
-                    var modsDirectory = SettingsManager.Settings.ModsDirectory;
-                    var toolsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
+                {"Mod Archives", "zip,7z,rar,tar,tar.gz,tar.xz,tar.zst,tar.bz2,tar.lz"}
+            };
 
-                    // Backup mods before adding any new mods (unless user disabled automatic backups)
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus pickerResult = Nfd.OpenDialogMultiple(out string[]? filePaths, filters);
+        
+            if (pickerResult == NfdStatus.Ok)
+            {
+                int successCount = 0;
+                var modsDirectory = SettingsManager.Settings.ModsDirectory;
+
+                // Backup mods before adding any new mods (unless user disabled automatic backups)
+                try
+                {
+                    if (!SettingsManager.Settings.DoNotBackupModsAutomatically)
+                        ModBackupManager.BackupMods(modsDirectory);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Failed to create backup before adding mods: {ex.Message}");
+                }
+
+                filePaths ??= [];
+                foreach (var file in filePaths)
+                {
                     try
                     {
-                        if (!SettingsManager.Settings.DoNotBackupModsAutomatically)
-                            ModBackupManager.BackupMods(modsDirectory);
+                        string modName = Path.GetFileNameWithoutExtension(file);
+                        string targetDir = Path.Combine(modsDirectory, modName); 
+
+                        if (Directory.Exists(targetDir))
+                        {
+                            var result = CustomMessageBox.Show($"A mod named '{modName}' already exists. Do you want to overwrite it?", "Mod Exists", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                            if (result == DialogResult.No) continue;
+                            Directory.Delete(targetDir, true);
+                        }
+
+                        Directory.CreateDirectory(targetDir);
+
+                        using (var archive = ArchiveFactory.Open(file))
+                        {
+                            archive.WriteToDirectory(targetDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
+                        }
+                        successCount++;
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Failed to create backup before adding mods: {ex.Message}");
+                        CustomMessageBox.Show($"Failed to install mod from '{Path.GetFileName(file)}':\n{ex.Message}", "Installation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
-        
-                    foreach (var file in ofd.FileNames)
-                    {
-                        try
-                        {
-                            string modName = Path.GetFileNameWithoutExtension(file);
-                            string targetDir = Path.Combine(modsDirectory, modName); 
-
-                            if (Directory.Exists(targetDir))
-                            {
-                                var result = CustomMessageBox.Show($"A mod named '{modName}' already exists. Do you want to overwrite it?", "Mod Exists", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                                if (result == DialogResult.No) continue;
-                                Directory.Delete(targetDir, true);
-                            }
-
-                            Directory.CreateDirectory(targetDir);
-
-                            using (var archive = ArchiveFactory.Open(file))
-                            {
-                                archive.WriteToDirectory(targetDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                            }
-                            successCount++;
-                        }
-                        catch (Exception ex)
-                        {
-                            CustomMessageBox.Show($"Failed to install mod from '{Path.GetFileName(file)}':\n{ex.Message}", "Installation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
-                    }
-                    UpdateStatus($"{successCount} of {ofd.FileNames.Length} mod(s) installed.");
-                    RefreshModList();
                 }
+                UpdateStatus($"{successCount} of {filePaths.Length} mod(s) installed.");
+                RefreshModList();
             }
         }
 
@@ -3579,16 +3583,14 @@ namespace CrossworldsModManager
 
         private void btnDevSelectPath_Click(object sender, EventArgs e)
         {
-            using (var fbd = new CustomFileBrowser())
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.PickFolder(out string? folderPath);
+            if (result ==  NfdStatus.Ok)
             {
-                fbd.Mode = CustomFileBrowser.BrowserMode.SelectFolder;
-                fbd.Text = "Select your Unreal Engine content export directory";
-                if (fbd.ShowDialog() == DialogResult.OK)
-                {
-                    SettingsManager.Settings.DeveloperExportPath = fbd.SelectedPath;
-                    SettingsManager.Save();
-                    LoadDeveloperSettings();
-                }
+                if (folderPath == null) return;
+                SettingsManager.Settings.DeveloperExportPath = folderPath;
+                SettingsManager.Save();
+                LoadDeveloperSettings();
             }
         }
 

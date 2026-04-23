@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using NativeFileDialogs.Net;
 
 namespace CrossworldsModManager
 {
@@ -519,18 +520,20 @@ namespace CrossworldsModManager
         private void BtnAddFile_Click(object? sender, EventArgs e)
         {
             if (!(_lstOptions.SelectedItem is ConfigOption opt)) return;
-
-            using (var ofd = new CustomFileBrowser())
+            
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                ofd.Multiselect = true;
-                ofd.Filter = "Mod Files|*.pak;*.utoc;*.ucas;*.json|All Files|*.*";
-                // Start in the mod directory if possible
-                if (Directory.Exists(_modPath)) ofd.InitialDirectory = _modPath;
+                {"Mod Files", "pak,utoc,ucas,json"}
+            };
 
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    AddFilesToOption(opt, ofd.FileNames);
-                }
+            string? startingPath = Directory.Exists(_modPath) ? _modPath : null;
+            
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.OpenDialogMultiple(out string[]? filePath, filters, startingPath);
+
+            if (result == NfdStatus.Ok)
+            {
+                if (filePath is not null) AddFilesToOption(opt, filePath);
             }
         }
 
@@ -644,24 +647,29 @@ namespace CrossworldsModManager
 
         private void ChangeThumbnail()
         {
-            using (var ofd = new CustomFileBrowser())
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                ofd.Text = "Select Thumbnail Image";
-                ofd.Filter = "Image Files|*.jpg;*.png;*.jpeg;*.bmp;*.gif";
-                if (ofd.ShowDialog() == DialogResult.OK)
+                {"Image Files", "jpg,png,jpeg,bmp,gif"}
+            };
+            
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.OpenDialog(out string? filePath, filters);
+
+            if (result == NfdStatus.Ok)
+            {
+                if (filePath is null) return;
+                
+                _pendingThumbnailPath = filePath;
+                try
                 {
-                    _pendingThumbnailPath = ofd.FileName;
-                    try
+                    using (var stream = new FileStream(_pendingThumbnailPath, FileMode.Open, FileAccess.Read))
                     {
-                        using (var stream = new FileStream(_pendingThumbnailPath, FileMode.Open, FileAccess.Read))
-                        {
-                            _picThumbnail.Image = Image.FromStream(stream);
-                        }
+                        _picThumbnail.Image = Image.FromStream(stream);
                     }
-                    catch (Exception ex)
-                    {
-                        CustomMessageBox.Show($"Error loading image: {ex.Message}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    CustomMessageBox.Show($"Error loading image: {ex.Message}");
                 }
             }
         }
