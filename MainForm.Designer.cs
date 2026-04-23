@@ -53,9 +53,6 @@ namespace CrossworldsModManager
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-            this.locresToolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.convertlocresToJsonToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.convertJsonToLocresToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.enableAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.disableAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.organizeAlphabeticallyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -236,8 +233,7 @@ namespace CrossworldsModManager
             this.enableAllToolStripMenuItem,
             this.disableAllToolStripMenuItem,
             this.organizeAlphabeticallyToolStripMenuItem,
-            this.toolStripSeparator2,
-            this.locresToolsToolStripMenuItem});
+            this.toolStripSeparator2});
             this.toolsToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
@@ -255,29 +251,6 @@ namespace CrossworldsModManager
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
             this.toolStripSeparator2.Size = new System.Drawing.Size(177, 6);
-            // 
-            // locresToolsToolStripMenuItem
-            // 
-            this.locresToolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.convertlocresToJsonToolStripMenuItem,
-            this.convertJsonToLocresToolStripMenuItem});
-            this.locresToolsToolStripMenuItem.Name = "locresToolsToolStripMenuItem";
-            this.locresToolsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.locresToolsToolStripMenuItem.Text = "Locres Tools";
-            // 
-            // convertlocresToJsonToolStripMenuItem
-            // 
-            this.convertlocresToJsonToolStripMenuItem.Name = "convertlocresToJsonToolStripMenuItem";
-            this.convertlocresToJsonToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
-            this.convertlocresToJsonToolStripMenuItem.Text = "Convert .locres to .json...";
-            this.convertlocresToJsonToolStripMenuItem.Click += new System.EventHandler(this.convertlocresToJsonToolStripMenuItem_Click);
-            // 
-            // convertJsonToLocresToolStripMenuItem
-            // 
-            this.convertJsonToLocresToolStripMenuItem.Name = "convertJsonToLocresToolStripMenuItem";
-            this.convertJsonToLocresToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
-            this.convertJsonToLocresToolStripMenuItem.Text = "Convert .json to .locres...";
-            this.convertJsonToLocresToolStripMenuItem.Click += new System.EventHandler(this.convertjsonTolocresToolStripMenuItem_Click);
             // 
             // enableAllToolStripMenuItem
             // 
@@ -975,8 +948,6 @@ namespace CrossworldsModManager
         private System.Windows.Forms.ToolStripMenuItem disableAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem organizeAlphabeticallyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem locresToolsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem convertlocresToJsonToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem convertJsonToLocresToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;

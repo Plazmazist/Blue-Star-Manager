@@ -2656,32 +2656,6 @@ namespace CrossworldsModManager
             }
         }
 
-        private async void convertlocresToJsonToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (var ofd = new CustomFileBrowser())
-            {
-                ofd.Text = "Select .locres file to convert";
-                ofd.Filter = "Localization Resource (*.locres)|*.locres";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    await LocresConverter.ConvertToJsonAsync(ofd.FileName);
-                }
-            }
-        }
-
-        private async void convertjsonTolocresToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (var ofd = new CustomFileBrowser())
-            {
-                ofd.Text = "Select .json file to convert";
-                ofd.Filter = "JSON File (*.json)|*.json";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    await LocresConverter.ConvertToLocresAsync(ofd.FileName);
-                }
-            }
-        }
-
         private void btnToggleDebugLog_Click(object sender, EventArgs e)
         {
             if (splitContainerRoot.Panel2Collapsed)
