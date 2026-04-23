@@ -947,7 +947,6 @@ namespace CrossworldsModManager
         private System.Windows.Forms.ToolStripMenuItem enableAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem disableAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem organizeAlphabeticallyToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem locresToolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
