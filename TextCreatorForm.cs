@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using NativeFileDialogs.Net;
 
 namespace CrossworldsModManager
 {
@@ -389,26 +390,26 @@ namespace CrossworldsModManager
                 return;
             }
 
-            using (var sfd = new CustomFileBrowser())
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                sfd.Mode = CustomFileBrowser.BrowserMode.SaveFile;
-                sfd.FileName = Path.GetFileName(_targetFileName);
-                sfd.Filter = "JSON Files|*.json";
-                sfd.OverwritePrompt = true; // CustomFileBrowser handles this with CustomMessageBox
+                {"JSON Files", "json"}
+            };
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.SaveDialog(out string? fileName, filters, Path.GetFileName(_targetFileName));
 
-                if (sfd.ShowDialog() == DialogResult.OK)
+            if (result == NfdStatus.Ok)
+            {
+                if (fileName is null) return;
+                try
                 {
-                    try
-                    {
-                        var options = new JsonSerializerOptions { WriteIndented = true };
-                        string json = JsonSerializer.Serialize(changesToSave, options);
-                        File.WriteAllText(sfd.FileName, json);
-                        CustomMessageBox.Show($"Saved {changesToSave.Count} entries to:\n{sfd.FileName}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        CustomMessageBox.Show($"Failed to save: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    var options = new JsonSerializerOptions { WriteIndented = true };
+                    string json = JsonSerializer.Serialize(changesToSave, options);
+                    File.WriteAllText(fileName, json);
+                    CustomMessageBox.Show($"Saved {changesToSave.Count} entries to:\n{fileName}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    CustomMessageBox.Show($"Failed to save: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

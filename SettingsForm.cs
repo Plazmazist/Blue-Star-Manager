@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
+using NativeFileDialogs.Net;
 
 namespace CrossworldsModManager
 {
@@ -57,34 +59,39 @@ namespace CrossworldsModManager
 
         private void btnBrowseGameDir_Click(object sender, EventArgs e)
         {
-            using (var ofd = new CustomFileBrowser())
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                ofd.Text = "Select Game Executable (SonicRacingCrossWorlds.exe)";
-                ofd.Filter = "SonicRacingCrossWorlds.exe|SonicRacingCrossWorlds.exe";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    txtGameDir.Text = ofd.FileName;
-                }
+                {"Game Executable", "SonicRacingCrossWorlds.exe"}
+            };
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
+            
+            if (result == NfdStatus.Ok)
+            {
+                if (fileName == null) return;
+                txtGameDir.Text = fileName;
             }
         }
 
         private void btnBrowseModsDir_Click(object sender, EventArgs e)
         {
-            using (var fbd = new CustomFileBrowser())
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.PickFolder(out string? dirPath);
+            
+            while (true)
             {
-                fbd.Mode = CustomFileBrowser.BrowserMode.SelectFolder;
-                fbd.Text = "Select the directory to store your mods";
-                while (fbd.ShowDialog() == DialogResult.OK)
+                if (result == NfdStatus.Ok)
                 {
-                    var dirName = new System.IO.DirectoryInfo(fbd.SelectedPath).Name;
+                    if (dirPath == null) continue;
+                    var dirName = new DirectoryInfo(dirPath).Name;
                     if (dirName.Equals("~mods", StringComparison.OrdinalIgnoreCase))
                     {
                         CustomMessageBox.Show("You cannot select the game's '~mods' folder as your mod storage directory.\n\nThis folder is used by the manager to install mods. Please select a different folder to store your source mods.", "Invalid Directory", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         continue;
                     }
-                    txtModsDir.Text = fbd.SelectedPath;
-                    break;
+                    txtModsDir.Text = dirPath;
                 }
+                break;
             }
         }
 

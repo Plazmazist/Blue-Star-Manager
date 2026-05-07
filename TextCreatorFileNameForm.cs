@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using NativeFileDialogs.Net;
 
 namespace CrossworldsModManager
 {
@@ -98,16 +100,20 @@ namespace CrossworldsModManager
 
         private void BtnLoad_Click(object? sender, EventArgs e)
         {
-            using (var ofd = new CustomFileBrowser())
+            Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                ofd.Text = "Select JSON Mod File";
-                ofd.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
-                if (ofd.ShowDialog() == DialogResult.OK)
-                {
-                    FileName = ofd.FileName;
-                    this.DialogResult = DialogResult.OK;
-                    this.Close();
-                }
+                {"JSON Files", "json"}
+            };
+            // TODO: add titlebar text when NativeFileDialogs supports it
+            NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
+
+            if (result == NfdStatus.Ok)
+            {
+                if (fileName is null) return;
+                
+                FileName = fileName;
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
         }
     }
