@@ -1928,7 +1928,7 @@ namespace CrossworldsModManager
 
                 await Task.Run(() =>
                 {
-                    using (var archive = ArchiveFactory.Open(tempFile))
+                    using (var archive = ArchiveFactory.OpenArchive(tempFile))
                     {
                         archive.WriteToDirectory(win64Dir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                     }
@@ -2197,7 +2197,7 @@ namespace CrossworldsModManager
 
                         Directory.CreateDirectory(targetDir);
 
-                        using (var archive = ArchiveFactory.Open(file))
+                        using (var archive = ArchiveFactory.OpenArchive(file))
                         {
                             archive.WriteToDirectory(targetDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                         }

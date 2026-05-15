@@ -417,7 +417,7 @@ namespace CrossworldsModManager
                     }
                 }
 
-                using (var archive = SevenZipArchive.Open(archivePath))
+                using (var archive = SevenZipArchive.OpenArchive(archivePath))
                 {
                     archive.WriteToDirectory(ToolsDir, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
                 }

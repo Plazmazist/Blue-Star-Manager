@@ -574,7 +574,7 @@ namespace CrossworldsModManager
             _logger?.Report($"Extracting {Path.GetFileName(archivePath)} using SharpCompress...");
             await Task.Run(() =>
             {
-                using var archive = ArchiveFactory.Open(archivePath);
+                using var archive = ArchiveFactory.OpenArchive(archivePath);
                 archive.WriteToDirectory(targetDir, new SharpCompress.Common.ExtractionOptions { ExtractFullPath = true, Overwrite = true });
             });
 
