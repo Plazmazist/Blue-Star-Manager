@@ -61,7 +61,7 @@ namespace CrossworldsModManager
         {
             Dictionary<string, string> filters = new Dictionary<string, string>
             {
-                {"Game Executable", "SonicRacingCrossWorlds.exe"}
+                {"Game Executable", "exe"}
             };
             // TODO: add titlebar text when NativeFileDialogs supports it
             NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
