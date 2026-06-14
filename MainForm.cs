@@ -2125,10 +2125,11 @@ namespace CrossworldsModManager
         private void PromptForModsDirectory()
         {
             CustomMessageBox.Show("Welcome! Please select a folder to store your mods.", "First-Time Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            // TODO: add titlebar text when NativeFileDialogs supports it
-            NfdStatus result = Nfd.PickFolder(out string? dir);
+            
             while (true)
             {
+                // TODO: add titlebar text when NativeFileDialogs supports it
+                NfdStatus result = Nfd.PickFolder(out string? dir);
                 if (result == NfdStatus.Ok)
                 {
                     if (dir == null) continue;
