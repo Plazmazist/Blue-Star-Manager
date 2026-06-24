@@ -59,7 +59,7 @@ namespace CrossworldsModManager
                     {
                         RegisterProtocol();
                     }
-                    if (Environment.GetEnvironmentVariable("BLUESTAR_DISABLE_PROTOCOL_REGISTER") == null && RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
+                    if (Environment.GetEnvironmentVariable("BLUESTAR_DISABLE_PROTOCOL_REGISTER") == null && Environment.GetEnvironmentVariable("DESKTOPINTEGRATION") != "1" && RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
                     {
                         string applicationsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "share", "applications");
                         string desktopFileName = "com.bluestar.manager.desktop";
@@ -185,7 +185,7 @@ namespace CrossworldsModManager
 
         private static void RegisterProtocolLinux()
         {
-            if (Environment.GetEnvironmentVariable("BLUESTAR_DISABLE_PROTOCOL_REGISTER") != null)
+            if (Environment.GetEnvironmentVariable("BLUESTAR_DISABLE_PROTOCOL_REGISTER") != null || Environment.GetEnvironmentVariable("DESKTOPINTEGRATION") == "1")
                 return;
 
             try
