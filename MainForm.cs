@@ -3323,7 +3323,7 @@ namespace CrossworldsModManager
                 {
                     using (var detailsForm = new ModDetailsFormLinux(fullModInfo, browserLogger, RefreshModList))
                     {
-                        detailsForm.SetConfirmationMode(); // Adapt the form for Yes/No confirmation
+                        detailsForm.SetConfirmationMode(fileToInstall); // Adapt the form for Yes/No confirmation
 
                         // Backup mods before proceeding with a 1-Click install (unless user disabled automatic backups)
                         try
@@ -3355,7 +3355,7 @@ namespace CrossworldsModManager
                 {
                     using (var detailsForm = new ModDetailsForm(fullModInfo, browserLogger, RefreshModList))
                     {
-                        detailsForm.SetConfirmationMode(); // Adapt the form for Yes/No confirmation
+                        detailsForm.SetConfirmationMode(fileToInstall); // Adapt the form for Yes/No confirmation
 
                         // Backup mods before proceeding with a 1-Click install (unless user disabled automatic backups)
                         try

@@ -203,7 +203,7 @@ namespace CrossworldsModManager
             this.StartPosition = FormStartPosition.CenterParent;
         }
 
-        public void SetConfirmationMode()
+        public void SetConfirmationMode(GameBananaFile? fileToInstall = null)
         {
             _isConfirmationMode = true;
             this.Text = "Confirm Mod Installation";
@@ -242,23 +242,53 @@ namespace CrossworldsModManager
 
             // Capture the original parent before changing it.
             var originalParent = btnDownload.Parent;
+            Panel? parentPanel = null;
 
             buttonPanel.Controls.Add(btnCancel);
             buttonPanel.Controls.Add(btnDownload);
 
             // Add the new button panel to the parent of the original download button
-            if (originalParent is Panel parentPanel)
+            if (originalParent is Panel pp)
             {
+                parentPanel = pp;
                 parentPanel.Controls.Add(buttonPanel);
                 // Bring the button panel to the front to ensure it's at the very bottom
                 buttonPanel.BringToFront();
             }
 
             // For 1-Click, we already know the file, so we don't need to show the list.
-            // Remove the listbox from its parent so it no longer takes up space.
-            // The button panel will now be the only thing at the bottom of the right panel.
-            lstFiles.Parent?.Controls.Remove(lstFiles);
-            lstFiles.Dispose(); // Clean up the resource.
+            // Instead, show the file name being installed.
+            if (fileToInstall != null)
+            {
+                // Replace the listbox with a label showing the file being installed
+                lstFiles.Parent?.Controls.Remove(lstFiles);
+                lstFiles.Dispose();
+
+                var lblFileName = new Label
+                {
+                    Text = $"Installing: {fileToInstall.FileName}",
+                    Dock = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    ForeColor = Color.White,
+                    Font = new Font("Segoe UI", 11F, FontStyle.Regular),
+                    BackColor = Color.FromArgb(45, 45, 48),
+                    Padding = new Padding(10)
+                };
+                if (parentPanel != null)
+                {
+                    // Insert before the button panel so it takes the remaining space
+                    parentPanel.Controls.Add(lblFileName);
+                    lblFileName.BringToFront();
+                }
+            }
+            else
+            {
+                // For 1-Click, we already know the file, so we don't need to show the list.
+                // Remove the listbox from its parent so it no longer takes up space.
+                // The button panel will now be the only thing at the bottom of the right panel.
+                lstFiles.Parent?.Controls.Remove(lstFiles);
+                lstFiles.Dispose();
+            }
         }
 
         private void ShowProgressView()
@@ -423,7 +453,7 @@ namespace CrossworldsModManager
                 }
 
                 await DownloadFileAsync(selectedFile, downloadedFilePath, progressForm);
-                string installedPath = await ExtractAndInstallAsync(downloadedFilePath, progressForm);
+                string installedPath = await ExtractAndInstallAsync(downloadedFilePath, selectedFile.FileName, progressForm);
 
                 // Check if a thumbnail already exists
                 bool thumbnailExists = false;
@@ -525,7 +555,7 @@ namespace CrossworldsModManager
             _logger?.Report($"Download complete: {destinationPath}");
         }
 
-        private async Task<string> ExtractAndInstallAsync(string archivePath, ProgressForm progressForm)
+        private async Task<string> ExtractAndInstallAsync(string archivePath, string fileName, ProgressForm progressForm)
         {
             var modsDirectory = SettingsManager.Settings.ModsDirectory;
             if (string.IsNullOrEmpty(modsDirectory)) throw new InvalidOperationException("Mods directory is not set.");
@@ -541,6 +571,14 @@ namespace CrossworldsModManager
             if (string.IsNullOrWhiteSpace(modName))
             {
                 throw new InvalidOperationException("Mod name is invalid or empty, cannot create a folder for it. Aborting installation to prevent data loss.");
+            }
+
+            // Append the zip file name (without extension) to distinguish different files of the same mod,
+            // preventing overwrites when a mod offers multiple variants.
+            string fileVariant = SanitizeFolderName(Path.GetFileNameWithoutExtension(fileName));
+            if (!string.IsNullOrWhiteSpace(fileVariant))
+            {
+                modName = $"{modName} - {fileVariant}";
             }
 
             string targetDir = Path.Combine(modsDirectory, modName);
