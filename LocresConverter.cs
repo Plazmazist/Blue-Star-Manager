@@ -1,16 +1,15 @@
-using System.IO;
-using System.Windows.Forms;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using Newtonsoft.Json.Linq;
 using SharpCompress.Archives;
 using SharpCompress.Archives.SevenZip;
 using SharpCompress.Common;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Newtonsoft.Json.Linq;
 
 namespace CrossworldsModManager
 {
@@ -22,10 +21,8 @@ namespace CrossworldsModManager
         #else
             private const string LinuxToolUrl = "https://github.com/AntiApple4life/LocResUtility/releases/download/v2.1.0/LocResUtilityCli-v2.1.0-linux-x64.7z";
         #endif
-        private static readonly string ToolsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
-
-        private static readonly string AppImageWorkDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "data");
-        private static readonly string ToolExePath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? Path.Combine(ToolsDir, "LocResUtilityCli", "LocResUtilityCli") : Path.Combine(ToolsDir, "LocResUtilityCli", "LocResUtilityCli.exe");
+        private static readonly string ToolsDir = PlatformUtils.GetToolsDir();
+        private static readonly string ToolExePath = Path.Combine(ToolsDir, "LocResUtilityCli", PlatformUtils.IsLinux ? "LocResUtilityCli" : "LocResUtilityCli.exe");
 
         public static async Task ConvertToJsonAsync(string locresPath)
         {
@@ -105,13 +102,8 @@ namespace CrossworldsModManager
 
         public static async Task ProcessModJsonFilesAsync(IEnumerable<ModInfo> enabledMods, IProgress<string>? progress = null)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
-            {
-                if (!Directory.Exists(AppImageWorkDir))
-                {
-                    Directory.CreateDirectory(AppImageWorkDir);
-                }
-            }
+            if (PlatformUtils.IsAppImage)
+                Directory.CreateDirectory(PlatformUtils.AppDataDataDir);
             // Language -> Namespace -> Key -> Value
             var jsonModifications = new Dictionary<string, Dictionary<string, Dictionary<string, string>>>();
 
@@ -293,7 +285,7 @@ namespace CrossworldsModManager
                 }
 
                 // 5. Save the final merged JSON for this language to the Tools folder
-                var outputJsonPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(AppImageWorkDir, $"Game_{langCode}.json") : Path.Combine(ToolsDir, $"Game_{langCode}.json");
+                var outputJsonPath = Path.Combine(PlatformUtils.GetMergedJsonDir(), $"Game_{langCode}.json");
                 await File.WriteAllTextAsync(outputJsonPath, baseJson.ToString(Newtonsoft.Json.Formatting.Indented));
                 progress?.Report($"Saved merged JSON for {langCode}: {outputJsonPath}");
 
@@ -307,19 +299,14 @@ namespace CrossworldsModManager
 
         public static async Task PackMergedLocresAsync(string gamePath, IProgress<string>? progress = null)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
-            {
-                if (!Directory.Exists(AppImageWorkDir))
-                {
-                    Directory.CreateDirectory(AppImageWorkDir);
-                }
-            }
+            if (PlatformUtils.IsAppImage)
+                Directory.CreateDirectory(PlatformUtils.AppDataDataDir);
             try
             {
                 string? exePath = await EnsureToolExistsAsync();
                 if (exePath == null) return;
 
-                var mergedJsonFiles = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Directory.GetFiles(AppImageWorkDir, "Game_*.json") : Directory.GetFiles(ToolsDir, "Game_*.json");
+                var mergedJsonFiles = Directory.GetFiles(PlatformUtils.GetMergedJsonDir(), "Game_*.json");
                 if (mergedJsonFiles.Length == 0)
                 {
                     progress?.Report("No merged 'Game_*.json' files found in the Tools folder to pack.");
@@ -328,7 +315,7 @@ namespace CrossworldsModManager
 
                 var languagesRoot = Path.Combine(ToolsDir, "Locres", "UNION", "Content", "Localization", "Game");
                 
-                var outputRoot = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(AppImageWorkDir, "LocresMod", "UNION", "Content", "Localization", "Game") : Path.Combine(ToolsDir, "LocresMod", "UNION", "Content", "Localization", "Game");
+                var outputRoot = PlatformUtils.GetLocresModOutputRoot();
 
                 var tasks = mergedJsonFiles.Select(async jsonPath =>
                 {
@@ -360,11 +347,11 @@ namespace CrossworldsModManager
 
                     // Final step: Run UnrealPak.bat with the LocresMod folder path.
                     var repakDir = Path.Combine(ToolsDir, "repak");
-                    var repakBinPath = Path.Combine(repakDir, RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "repak" : "repak.exe");
+                    var repakBinPath = Path.Combine(repakDir, PlatformUtils.IsLinux ? "repak" : "repak.exe");
                     if (File.Exists(repakBinPath))
                     {
-                        var locresModPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(AppImageWorkDir, "LocresMod") : Path.Combine(ToolsDir, "LocresMod");
-                        var outputPakPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(AppImageWorkDir, "LocresMod.pak") : Path.Combine(ToolsDir, "LocresMod.pak");
+                        var locresModPath = PlatformUtils.IsAppImage ? Path.Combine(PlatformUtils.AppDataDataDir, "LocresMod") : Path.Combine(ToolsDir, "LocresMod");
+                        var outputPakPath = PlatformUtils.GetLocresModPakPath();
                         
                         var cmdArgs = $"pack \"{locresModPath}\"";
                         await RunProcessAsync(repakBinPath, cmdArgs, progress, repakDir);
@@ -373,7 +360,7 @@ namespace CrossworldsModManager
                     }
                     else
                     {
-                        progress?.Report($"Warning: {(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "repak" : "repak.exe")} not found at {repakDir}. Skipping final pak creation.");
+                        progress?.Report($"Warning: {(PlatformUtils.IsLinux ? "repak" : "repak.exe")} not found at {repakDir}. Skipping final pak creation.");
                     }
                 }
 
@@ -409,7 +396,7 @@ namespace CrossworldsModManager
 
                 using (var client = new HttpClient())
                 {
-                    var response = await client.GetAsync(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? LinuxToolUrl : ToolUrl);
+                    var response = await client.GetAsync(PlatformUtils.IsLinux ? LinuxToolUrl : ToolUrl);
                     response.EnsureSuccessStatusCode();
                     using (var fs = new FileStream(archivePath, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
@@ -423,17 +410,14 @@ namespace CrossworldsModManager
                 }
 
                 File.Delete(archivePath);
-                Console.WriteLine(ToolExePath);
                 if (File.Exists(ToolExePath))
                 {
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    {
+                    if (PlatformUtils.IsLinux)
                         File.SetUnixFileMode(ToolExePath, UnixFileMode.UserExecute);
-                    }
                     CustomMessageBox.Show("LocResUtility downloaded and extracted successfully.", "Download Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return ToolExePath;
                 }
-                throw new FileNotFoundException(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "Failed to find LocResUtility binary after extraction." : "Failed to find LocResUtility.exe after extraction.");
+                throw new FileNotFoundException(PlatformUtils.IsLinux ? "Failed to find LocResUtility binary after extraction." : "Failed to find LocResUtility.exe after extraction.");
             }
             catch (Exception ex)
             {

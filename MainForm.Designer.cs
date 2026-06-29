@@ -126,9 +126,8 @@ namespace CrossworldsModManager
             this.menuStrip1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.settingsToolStripMenuItem,
-            this.toolsToolStripMenuItem,
             this.profilesToolStripMenuItem,
+            this.toolsToolStripMenuItem,
             this.groupsToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip1.ForeColor = System.Drawing.Color.White;
@@ -145,6 +144,9 @@ namespace CrossworldsModManager
             this.pnlTopActions.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.pnlTopActions.Controls.Add(this.btnSave);
             this.pnlTopActions.Controls.Add(this.btnPlay);
+            this.pnlTopActions.Controls.Add(this.btnBrowseMods);
+            this.pnlTopActions.Controls.Add(this.btnBackupMods);
+            this.pnlTopActions.Controls.Add(this.btnRestoreMods);
             this.pnlTopActions.Controls.Add(this.btnRefresh);
             this.pnlTopActions.Controls.Add(this.btnAddMod);
             this.pnlTopActions.Controls.Add(this.btnRemoveMod);
@@ -230,10 +232,11 @@ namespace CrossworldsModManager
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.settingsToolStripMenuItem,
+            this.toolStripSeparator2,
             this.enableAllToolStripMenuItem,
             this.disableAllToolStripMenuItem,
-            this.organizeAlphabeticallyToolStripMenuItem,
-            this.toolStripSeparator2});
+            this.organizeAlphabeticallyToolStripMenuItem});
             this.toolsToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
@@ -244,7 +247,7 @@ namespace CrossworldsModManager
             this.settingsToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
-            this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Text = "Settings...";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
@@ -254,7 +257,7 @@ namespace CrossworldsModManager
             // 
             // enableAllToolStripMenuItem
             // 
-            this.enableAllToolStripMenuItem.ForeColor = System.Drawing.Color.Black;
+            this.enableAllToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.enableAllToolStripMenuItem.Name = "enableAllToolStripMenuItem";
             this.enableAllToolStripMenuItem.Size = new System.Drawing.Size(220, 22);
             this.enableAllToolStripMenuItem.Text = "Enable All Mods";
@@ -262,7 +265,7 @@ namespace CrossworldsModManager
             // 
             // disableAllToolStripMenuItem
             // 
-            this.disableAllToolStripMenuItem.ForeColor = System.Drawing.Color.Black;
+            this.disableAllToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.disableAllToolStripMenuItem.Name = "disableAllToolStripMenuItem";
             this.disableAllToolStripMenuItem.Size = new System.Drawing.Size(220, 22);
             this.disableAllToolStripMenuItem.Text = "Disable All Mods";
@@ -270,7 +273,7 @@ namespace CrossworldsModManager
             // 
             // organizeAlphabeticallyToolStripMenuItem
             // 
-            this.organizeAlphabeticallyToolStripMenuItem.ForeColor = System.Drawing.Color.Black;
+            this.organizeAlphabeticallyToolStripMenuItem.ForeColor = System.Drawing.Color.White;
             this.organizeAlphabeticallyToolStripMenuItem.Name = "organizeAlphabeticallyToolStripMenuItem";
             this.organizeAlphabeticallyToolStripMenuItem.Size = new System.Drawing.Size(220, 22);
             this.organizeAlphabeticallyToolStripMenuItem.Text = "Organize Alphabetically";
@@ -279,7 +282,6 @@ namespace CrossworldsModManager
             // profilesToolStripMenuItem
             // 
             this.profilesToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripSeparator3,
             this.newProfileToolStripMenuItem,
             this.renameProfileToolStripMenuItem,
             this.deleteProfileToolStripMenuItem});
@@ -406,7 +408,7 @@ namespace CrossworldsModManager
             this.modListView.ForeColor = System.Drawing.Color.White;
             this.modListView.FullRowSelect = true;
             this.modListView.HideSelection = false;
-            this.modListView.OwnerDraw = false; // This is already false, ensuring it stays that way.
+            this.modListView.OwnerDraw = true;
             this.modListView.Location = new System.Drawing.Point(10, 40);
             this.modListView.Name = "modListView";
             this.modListView.Size = new System.Drawing.Size(430, 553);
@@ -476,57 +478,13 @@ namespace CrossworldsModManager
             // 
             // pnlDevTop
             // 
-            this.pnlDevTop.Controls.Add(this.btnDevRefresh);
-            this.pnlDevTop.Controls.Add(this.btnOpenModsFolder);
-            this.pnlDevTop.Controls.Add(this.btnDevSelectPath);
             this.pnlDevTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.pnlDevTop.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
             this.pnlDevTop.Location = new System.Drawing.Point(3, 3);
             this.pnlDevTop.Name = "pnlDevTop";
+            this.pnlDevTop.Padding = new System.Windows.Forms.Padding(5);
             this.pnlDevTop.Size = new System.Drawing.Size(382, 40);
             this.pnlDevTop.TabIndex = 0;
-            // 
-            // btnDevSelectPath
-            // 
-            this.btnDevSelectPath.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.btnDevSelectPath.FlatAppearance.BorderSize = 0;
-            this.btnDevSelectPath.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnDevSelectPath.ForeColor = System.Drawing.Color.White;
-            this.btnDevSelectPath.Location = new System.Drawing.Point(5, 5);
-            this.btnDevSelectPath.Name = "btnDevSelectPath";
-            this.btnDevSelectPath.Size = new System.Drawing.Size(160, 25);
-            this.btnDevSelectPath.TabIndex = 0;
-            this.btnDevSelectPath.Text = "Select UE Export Path...";
-            this.btnDevSelectPath.UseVisualStyleBackColor = false;
-            this.btnDevSelectPath.Click += new System.EventHandler(this.btnDevSelectPath_Click);
-            // 
-            // btnOpenModsFolder
-            // 
-            this.btnOpenModsFolder.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.btnOpenModsFolder.FlatAppearance.BorderSize = 0;
-            this.btnOpenModsFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnOpenModsFolder.ForeColor = System.Drawing.Color.White;
-            this.btnOpenModsFolder.Location = new System.Drawing.Point(250, 5);
-            this.btnOpenModsFolder.Name = "btnOpenModsFolder";
-            this.btnOpenModsFolder.Size = new System.Drawing.Size(90, 25);
-            this.btnOpenModsFolder.TabIndex = 2;
-            this.btnOpenModsFolder.Text = "Open ~mods";
-            this.btnOpenModsFolder.UseVisualStyleBackColor = false;
-            this.btnOpenModsFolder.Click += new System.EventHandler(this.btnOpenModsFolder_Click);
-            // 
-            // btnDevRefresh
-            // 
-            this.btnDevRefresh.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
-            this.btnDevRefresh.FlatAppearance.BorderSize = 0;
-            this.btnDevRefresh.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnDevRefresh.ForeColor = System.Drawing.Color.White;
-            this.btnDevRefresh.Location = new System.Drawing.Point(170, 5);
-            this.btnDevRefresh.Name = "btnDevRefresh";
-            this.btnDevRefresh.Size = new System.Drawing.Size(75, 25);
-            this.btnDevRefresh.TabIndex = 1;
-            this.btnDevRefresh.Text = "Refresh";
-            this.btnDevRefresh.UseVisualStyleBackColor = false;
-            this.btnDevRefresh.Click += new System.EventHandler(this.btnDevRefresh_Click);
             // 
             // lblDevPath
             // 
@@ -708,6 +666,51 @@ namespace CrossworldsModManager
             this.btnPlay.Text = "▶ Play";
             this.btnPlay.UseVisualStyleBackColor = false;
             this.btnPlay.Click += new System.EventHandler(this.btnPlay_Click);
+            // 
+            // btnBrowseMods
+            // 
+            this.btnBrowseMods = new System.Windows.Forms.Button();
+            this.btnBrowseMods.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.btnBrowseMods.FlatAppearance.BorderSize = 0;
+            this.btnBrowseMods.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnBrowseMods.ForeColor = System.Drawing.Color.White;
+            this.btnBrowseMods.Margin = new System.Windows.Forms.Padding(0, 0, 5, 0);
+            this.btnBrowseMods.Name = "btnBrowseMods";
+            this.btnBrowseMods.Size = new System.Drawing.Size(80, 30);
+            this.btnBrowseMods.TabIndex = 16;
+            this.btnBrowseMods.Text = "Browse...";
+            this.btnBrowseMods.UseVisualStyleBackColor = false;
+            this.btnBrowseMods.Click += new System.EventHandler(this.btnBrowseMods_Click);
+            // 
+            // btnBackupMods
+            // 
+            this.btnBackupMods = new System.Windows.Forms.Button();
+            this.btnBackupMods.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.btnBackupMods.FlatAppearance.BorderSize = 0;
+            this.btnBackupMods.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnBackupMods.ForeColor = System.Drawing.Color.White;
+            this.btnBackupMods.Margin = new System.Windows.Forms.Padding(0, 0, 5, 0);
+            this.btnBackupMods.Name = "btnBackupMods";
+            this.btnBackupMods.Size = new System.Drawing.Size(80, 30);
+            this.btnBackupMods.TabIndex = 17;
+            this.btnBackupMods.Text = "Backup";
+            this.btnBackupMods.UseVisualStyleBackColor = false;
+            this.btnBackupMods.Click += new System.EventHandler(this.btnBackupMods_Click);
+            // 
+            // btnRestoreMods
+            // 
+            this.btnRestoreMods = new System.Windows.Forms.Button();
+            this.btnRestoreMods.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
+            this.btnRestoreMods.FlatAppearance.BorderSize = 0;
+            this.btnRestoreMods.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRestoreMods.ForeColor = System.Drawing.Color.White;
+            this.btnRestoreMods.Margin = new System.Windows.Forms.Padding(0, 0, 5, 0);
+            this.btnRestoreMods.Name = "btnRestoreMods";
+            this.btnRestoreMods.Size = new System.Drawing.Size(80, 30);
+            this.btnRestoreMods.TabIndex = 18;
+            this.btnRestoreMods.Text = "Restore";
+            this.btnRestoreMods.UseVisualStyleBackColor = false;
+            this.btnRestoreMods.Click += new System.EventHandler(this.btnRestoreMods_Click);
             // 
             // pnlSearch
             // 
@@ -964,6 +967,9 @@ namespace CrossworldsModManager
         private System.Windows.Forms.Button btnRemoveMod;
         private System.Windows.Forms.Button btnRefresh;
         private System.Windows.Forms.Button btnPlay;
+        private System.Windows.Forms.Button btnBrowseMods;
+        private System.Windows.Forms.Button btnBackupMods;
+        private System.Windows.Forms.Button btnRestoreMods;
         private System.Windows.Forms.TextBox txtSearch;
         private System.Windows.Forms.Label labelSearch;
         private System.Windows.Forms.Button btnToggleDebugLog;

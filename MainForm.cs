@@ -8,7 +8,6 @@ using System.IO.Compression;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using NativeFileDialogs.AutoGen;
@@ -28,30 +27,28 @@ namespace CrossworldsModManager
         private Dictionary<string, (string Path, string? AppName)> _gameInstallations = new();
         private List<ListViewItem> _allModItems = new List<ListViewItem>();
         private string? _selectedPlatform;
-        private Button? btnBrowseMods; // Added for GameBanana browser
-        private Button? btnBackupMods; // Added for Mod Backup
-        private Button? btnRestoreMods; // Added for Mod Restore
         private readonly string? _oneClickUrl;
         private ToolStripMenuItem? renameToolStripMenuItem;
         private ToolStripMenuItem? changeColorToolStripMenuItem;
         private ToolStripMenuItem? configMakerItem;
         private ToolStripMenuItem? normalizeRootItem;
+        private int _dropInsertionIndex = -1;
+        private bool _showDropLine;
 
         public MainForm(string? oneClickUrl, string appVersion)
         {
             InitializeComponent();
-            // Set the form's icon from the executable's embedded icon.
             _oneClickUrl = oneClickUrl;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            }
+
+            if (PlatformUtils.IsWindows)
+                this.Icon = Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
             else
             {
-                string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools", "icon.png");
+                string iconPath = Path.Combine(PlatformUtils.GetToolsDir(), "icon.png");
                 if (File.Exists(iconPath))
                 {
-                    using (var bmp = new Bitmap(iconPath)) { this.Icon = Icon.FromHandle(bmp.GetHicon()); }
+                    using (var bmp = new Bitmap(iconPath))
+                        this.Icon = Icon.FromHandle(bmp.GetHicon());
                 }
             }
 
@@ -68,54 +65,6 @@ namespace CrossworldsModManager
             textChangeToolItem.Click += TextChangeToolItem_Click;
             toolsToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
             toolsToolStripMenuItem.DropDownItems.Add(textChangeToolItem);
-
-            // Programmatically add the "Browse Mods" button to the flow layout
-            btnBrowseMods = new Button
-            {
-                Name = "btnBrowseMods",
-                Text = "Browse...",
-                Size = new Size(80, 30),
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(63, 63, 70),
-                Margin = new Padding(0, 0, 5, 0),
-                UseVisualStyleBackColor = false
-            };
-            btnBrowseMods.FlatAppearance.BorderSize = 0;
-            btnBrowseMods.Click += btnBrowseMods_Click;
-            pnlTopActions.Controls.Add(btnBrowseMods);
-
-            // Programmatically add the "Backup Mods" button
-            btnBackupMods = new Button
-            {
-                Name = "btnBackupMods",
-                Text = "Backup",
-                Size = new Size(80, 30),
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(63, 63, 70),
-                Margin = new Padding(0, 0, 5, 0),
-                UseVisualStyleBackColor = false
-            };
-            btnBackupMods.FlatAppearance.BorderSize = 0;
-            btnBackupMods.Click += btnBackupMods_Click;
-            pnlTopActions.Controls.Add(btnBackupMods);
-
-            // Programmatically add the "Restore Mods" button
-            btnRestoreMods = new Button
-            {
-                Name = "btnRestoreMods",
-                Text = "Restore",
-                Size = new Size(80, 30),
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(63, 63, 70),
-                Margin = new Padding(0, 0, 5, 0),
-                UseVisualStyleBackColor = false
-            };
-            btnRestoreMods.FlatAppearance.BorderSize = 0;
-            btnRestoreMods.Click += btnRestoreMods_Click;
-            pnlTopActions.Controls.Add(btnRestoreMods);
 
             LoadSettingsAndSetup();
 
@@ -135,7 +84,10 @@ namespace CrossworldsModManager
             modListView.AllowDrop = true;
             modListView.ItemDrag += modListView_ItemDrag;
             modListView.DragEnter += modListView_DragEnter;
+            modListView.DragOver += modListView_DragOver;
+            modListView.DragLeave += modListView_DragLeave;
             modListView.DragDrop += modListView_DragDrop;
+            modListView.Paint += modListView_Paint;
 
             // Add Mod Config Maker to context menu
             configMakerItem = new ToolStripMenuItem("Mod Config Maker");
@@ -261,10 +213,7 @@ namespace CrossworldsModManager
                 if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                     fileName += ".json";
 
-                string toolsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
-                string workDir = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null
-                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "data")
-                    : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
+                string workDir = PlatformUtils.GetWorkDir();
 
                 string gameJsonPath = Path.Combine(workDir, "Game.json");
                 string selectedLanguage = "en"; // Default language
@@ -301,7 +250,7 @@ namespace CrossworldsModManager
                     // 2. Try Tools Directory
                     if (string.IsNullOrEmpty(localizationPath))
                     {
-                        var toolsLocPath = Path.Combine(toolsDir, "Locres", "UNION", "Content", "Localization", "Game");
+                        var toolsLocPath = Path.Combine(workDir, "Locres", "UNION", "Content", "Localization", "Game");
                         if (Directory.Exists(toolsLocPath)) localizationPath = toolsLocPath;
                     }
 
@@ -472,7 +421,7 @@ namespace CrossworldsModManager
 
         private void DetectGameInstallations()
         {
-            _gameInstallations = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? GameRegistryLinux.FindGameInstallations() : GameRegistry.FindGameInstallations();
+            _gameInstallations = GameRegistry.FindGameInstallations();
         
             // If we found a game and the settings path is empty, auto-configure it.
             if (_gameInstallations.Any() && string.IsNullOrWhiteSpace(SettingsManager.Settings.GameDirectory))
@@ -864,11 +813,10 @@ namespace CrossworldsModManager
                     // After the pack operation completes, install the final produced pak into the game's ~mods folder.
                     try
                     {
-                        var toolsDir = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "data") : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
-                        var sourcePak = Path.Combine(toolsDir, "LocresMod.pak");
+                        var sourcePak = PlatformUtils.GetLocresModPakPath();
                         if (!File.Exists(sourcePak))
                         {
-                            var found = Directory.GetFiles(toolsDir, "LocresMod.pak", SearchOption.AllDirectories).FirstOrDefault();
+                            var found = Directory.GetFiles(PlatformUtils.GetWorkDir(), "LocresMod.pak", SearchOption.AllDirectories).FirstOrDefault();
                             if (!string.IsNullOrEmpty(found)) sourcePak = found;
                         }
 
@@ -893,7 +841,7 @@ namespace CrossworldsModManager
                                 if (File.Exists(bangLink)) File.Delete(bangLink);
 
                                 // Create a container folder in Tools to hold the pak, so we can link the folder
-                                var packedDir = Path.Combine(toolsDir, "LocresMod_Packed");
+                                var packedDir = Path.Combine(PlatformUtils.GetWorkDir(), "LocresMod_Packed");
                                 if (!Directory.Exists(packedDir)) Directory.CreateDirectory(packedDir);
 
                                 var oldPackedPak = Path.Combine(packedDir, "LocresMod.pak");
@@ -958,7 +906,7 @@ namespace CrossworldsModManager
                 if (SettingsManager.Settings.AutoCleanTemporaryFiles)
                 {
                     // Cleanup the LocresMod folder from the Tools directory as it's no longer needed.
-                    var locresModTempPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools", "LocresMod");
+                    var locresModTempPath = Path.Combine(PlatformUtils.GetToolsDir(), "LocresMod");
                     if (Directory.Exists(locresModTempPath))
                     {
                         try { Directory.Delete(locresModTempPath, true); progress.Report($"Cleaned up temporary folder: {locresModTempPath}"); }
@@ -966,17 +914,20 @@ namespace CrossworldsModManager
                     }
 
                     // Cleanup the merged Game_*.json files from the Tools directory.
-                    var toolsDir = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "data") : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
-                    try
+                    var mergedJsonDir = PlatformUtils.GetMergedJsonDir();
+                    if (Directory.Exists(mergedJsonDir))
                     {
-                        var mergedJsonFiles = Directory.GetFiles(toolsDir, "Game_*.json");
-                        foreach (var file in mergedJsonFiles)
+                        try
                         {
-                            File.Delete(file);
-                            progress.Report($"Cleaned up merged JSON: {Path.GetFileName(file)}");
+                            var mergedJsonFiles = Directory.GetFiles(mergedJsonDir, "Game_*.json");
+                            foreach (var file in mergedJsonFiles)
+                            {
+                                File.Delete(file);
+                                progress.Report($"Cleaned up merged JSON: {Path.GetFileName(file)}");
+                            }
                         }
+                        catch (Exception ex) { progress.Report($"Could not clean up merged JSON files: {ex.Message}"); }
                     }
-                    catch (Exception ex) { progress.Report($"Could not clean up merged JSON files: {ex.Message}"); }
                 }
 
                 if (SettingsManager.Settings.AutoCloseLogOnSuccess && !rtbLog.Text.Contains("Failed") && !rtbLog.Text.Contains("Error"))
@@ -1945,9 +1896,31 @@ namespace CrossworldsModManager
             }
         }
 
+        private static void SetConfirmationMode(Form form, GameBananaFile? fileToInstall)
+        {
+            if (form is ModDetailsFormLinux linuxForm)
+                linuxForm.SetConfirmationMode(fileToInstall);
+            else if (form is ModDetailsForm winForm)
+                winForm.SetConfirmationMode(fileToInstall);
+        }
+
+        private static string GetModFormName(Form form)
+        {
+            if (form is ModDetailsFormLinux linuxForm)
+                return linuxForm.ModName;
+            return ((ModDetailsForm)form).ModName;
+        }
+
+        private static Task LaunchModFormProgress(Form form, GameBananaFile fileToInstall)
+        {
+            if (form is ModDetailsFormLinux linuxForm)
+                return linuxForm.LaunchProgressForm(fileToInstall);
+            return ((ModDetailsForm)form).LaunchProgressForm(fileToInstall);
+        }
+
         private async Task<bool> CreateSymbolicLinkAsync(string linkPath, string targetPath)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (PlatformUtils.IsWindows)
             {
                 // Use Junctions on Windows to avoid Admin requirement for symbolic links
                 try
@@ -1989,7 +1962,7 @@ namespace CrossworldsModManager
 
         private async Task<bool> CreateFileSymbolicLinkAsync(string linkPath, string targetPath)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (PlatformUtils.IsWindows)
             {
                 try
                 {
@@ -2027,12 +2000,12 @@ namespace CrossworldsModManager
             string command;
             string arguments;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (PlatformUtils.IsWindows)
             {
                 command = "cmd.exe";
                 arguments = $"/c mklink /H \"{linkPath}\" \"{targetPath}\"";
             }
-            else // For Linux/macOS
+            else // Linux/macOS
             {
                 command = "ln";
                 arguments = $"-s \"{targetPath}\" \"{linkPath}\"";
@@ -2639,19 +2612,11 @@ namespace CrossworldsModManager
 
                 // Open the ModDetailsForm, which will handle the download/install process.
                 // This is the same behavior as clicking "Download" in the mod browser.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                using (var modDetailsForm = PlatformUtils.IsLinux
+                    ? (Form)new ModDetailsFormLinux(gameBananaMod, new Progress<string>(s => AppendLog(s)), RefreshModList)
+                    : new ModDetailsForm(gameBananaMod, new Progress<string>(s => AppendLog(s)), RefreshModList))
                 {
-                   using (var modDetailsForm = new ModDetailsFormLinux(gameBananaMod, new Progress<string>(s => AppendLog(s)), RefreshModList))
-                   {
-                       modDetailsForm.ShowDialog(this);
-                   }
-                }
-                else
-                {
-                    using (var modDetailsForm = new ModDetailsForm(gameBananaMod, new Progress<string>(s => AppendLog(s)), RefreshModList))
-                    {
-                        modDetailsForm.ShowDialog(this);
-                    }
+                    modDetailsForm.ShowDialog(this);
                 }
                 
             }
@@ -2679,7 +2644,7 @@ namespace CrossworldsModManager
         {
             try
             {
-                string flagPath = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar","megaman_promo.flag") : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "megaman_promo.flag");
+                string flagPath = PlatformUtils.GetPromoFlagPath("megaman_promo.flag");
                 if (File.Exists(flagPath)) return;
 
                 // Ensure the directory exists before trying to show/write the flag
@@ -2814,14 +2779,7 @@ namespace CrossworldsModManager
 
             if (item.Tag is ModInfo modInfo)
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Process.Start("xdg-open", $"\"{modInfo.DirectoryPath}\"");
-                }
-                else
-                {
-                    Process.Start("explorer.exe", modInfo.DirectoryPath);
-                }
+                PlatformUtils.OpenFolderInExplorer(modInfo.DirectoryPath);
                 
             }
         }
@@ -2956,7 +2914,9 @@ namespace CrossworldsModManager
                 {
                     Tag = profileName,
                     Checked = profileName == SettingsManager.Settings.ActiveProfileName,
-                    CheckOnClick = true
+                    CheckOnClick = true,
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(45, 45, 48)
                 };
                 item.Click += ProfileMenuItem_Click;
                 profilesToolStripMenuItem.DropDownItems.Add(item);
@@ -3059,16 +3019,32 @@ namespace CrossworldsModManager
 
             foreach (var groupName in SettingsManager.Settings.ModGroups.Keys.OrderBy(g => g))
             {
-                var groupItem = new ToolStripMenuItem(groupName);
-                groupItem.Tag = groupName;
+                var groupItem = new ToolStripMenuItem(groupName)
+                {
+                    Tag = groupName,
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(45, 45, 48)
+                };
 
-                var loadExclusive = new ToolStripMenuItem("Load (Exclusive)");
+                var loadExclusive = new ToolStripMenuItem("Load (Exclusive)")
+                {
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(45, 45, 48)
+                };
                 loadExclusive.Click += (s, e) => ApplyModGroup(groupName, GroupApplyMode.Exclusive);
 
-                var enableAdditive = new ToolStripMenuItem("Enable (Additive)");
+                var enableAdditive = new ToolStripMenuItem("Enable (Additive)")
+                {
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(45, 45, 48)
+                };
                 enableAdditive.Click += (s, e) => ApplyModGroup(groupName, GroupApplyMode.Additive);
 
-                var disableGroup = new ToolStripMenuItem("Disable Group Mods");
+                var disableGroup = new ToolStripMenuItem("Disable Group Mods")
+                {
+                    ForeColor = Color.White,
+                    BackColor = Color.FromArgb(45, 45, 48)
+                };
                 disableGroup.Click += (s, e) => ApplyModGroup(groupName, GroupApplyMode.Subtract);
 
                 groupItem.DropDownItems.Add(loadExclusive);
@@ -3297,19 +3273,11 @@ namespace CrossworldsModManager
                 {
                     CustomMessageBox.Show($"The specified file (ID: {downloadId}) could not be found.\n\nThis might happen if the mod was updated. Please select the correct file from the list.", "File Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    using (var detailsForm = PlatformUtils.IsLinux
+                        ? (Form)new ModDetailsFormLinux(fullModInfo, browserLogger, RefreshModList)
+                        : new ModDetailsForm(fullModInfo, browserLogger, RefreshModList))
                     {
-                        using (var detailsForm = new ModDetailsFormLinux(fullModInfo, browserLogger, RefreshModList))
-                        {
-                            detailsForm.ShowDialog(this);
-                        }
-                    }
-                    else
-                    {
-                        using (var detailsForm = new ModDetailsForm(fullModInfo, browserLogger, RefreshModList))
-                        {
-                            detailsForm.ShowDialog(this);
-                        }
+                        detailsForm.ShowDialog(this);
                     }
                     return;
                 }
@@ -3317,70 +3285,33 @@ namespace CrossworldsModManager
                 // Update the status with the correct file name.
                 UpdateStatus($"Found file: {fileToInstall.FileName}");
 
-                // Show the details form as a confirmation dialog.
-                // The form will handle fetching full details, downloading, and installing.
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                using (var detailsForm = PlatformUtils.IsLinux
+                    ? (Form)new ModDetailsFormLinux(fullModInfo, browserLogger, RefreshModList)
+                    : new ModDetailsForm(fullModInfo, browserLogger, RefreshModList))
                 {
-                    using (var detailsForm = new ModDetailsFormLinux(fullModInfo, browserLogger, RefreshModList))
+                    SetConfirmationMode(detailsForm, fileToInstall);
+
+                    try
                     {
-                        detailsForm.SetConfirmationMode(fileToInstall); // Adapt the form for Yes/No confirmation
-
-                        // Backup mods before proceeding with a 1-Click install (unless user disabled automatic backups)
-                        try
-                        {
-                            if (!SettingsManager.Settings.DoNotBackupModsAutomatically && !string.IsNullOrWhiteSpace(SettingsManager.Settings.ModsDirectory) && Directory.Exists(SettingsManager.Settings.ModsDirectory))
-                            {
-                                ModBackupManager.BackupMods(SettingsManager.Settings.ModsDirectory);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Failed to create backup before 1-Click install: {ex.Message}");
-                        }
-
-                        var result = detailsForm.ShowDialog(this);
-
-                        if (result == DialogResult.OK)
-                        {
-                            await detailsForm.LaunchProgressForm(fileToInstall);
-                            UpdateStatus($"1-Click Install for '{detailsForm.ModName}' successful!");
-                        }
-                        else
-                        {
-                            UpdateStatus("1-Click Install cancelled by user.");
-                        }
+                        if (!SettingsManager.Settings.DoNotBackupModsAutomatically && !string.IsNullOrWhiteSpace(SettingsManager.Settings.ModsDirectory) && Directory.Exists(SettingsManager.Settings.ModsDirectory))
+                            ModBackupManager.BackupMods(SettingsManager.Settings.ModsDirectory);
                     }
-                }
-                else
-                {
-                    using (var detailsForm = new ModDetailsForm(fullModInfo, browserLogger, RefreshModList))
+                    catch (Exception ex)
                     {
-                        detailsForm.SetConfirmationMode(fileToInstall); // Adapt the form for Yes/No confirmation
+                        Debug.WriteLine($"Failed to create backup before 1-Click install: {ex.Message}");
+                    }
 
-                        // Backup mods before proceeding with a 1-Click install (unless user disabled automatic backups)
-                        try
-                        {
-                            if (!SettingsManager.Settings.DoNotBackupModsAutomatically && !string.IsNullOrWhiteSpace(SettingsManager.Settings.ModsDirectory) && Directory.Exists(SettingsManager.Settings.ModsDirectory))
-                            {
-                                ModBackupManager.BackupMods(SettingsManager.Settings.ModsDirectory);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Failed to create backup before 1-Click install: {ex.Message}");
-                        }
+                    var result = detailsForm.ShowDialog(this);
 
-                        var result = detailsForm.ShowDialog(this);
-
-                        if (result == DialogResult.OK)
-                        {
-                            await detailsForm.LaunchProgressForm(fileToInstall);
-                            UpdateStatus($"1-Click Install for '{detailsForm.ModName}' successful!");
-                        }
-                        else
-                        {
-                            UpdateStatus("1-Click Install cancelled by user.");
-                        }
+                    if (result == DialogResult.OK)
+                    {
+                        var modName = GetModFormName(detailsForm);
+                        await LaunchModFormProgress(detailsForm, fileToInstall);
+                        UpdateStatus($"1-Click Install for '{modName}' successful!");
+                    }
+                    else
+                    {
+                        UpdateStatus("1-Click Install cancelled by user.");
                     }
                 }
             }
@@ -3396,49 +3327,154 @@ namespace CrossworldsModManager
 
         private void modListView_ItemDrag(object? sender, ItemDragEventArgs e)
         {
-            if (e.Item != null)
-            {
-                modListView.DoDragDrop(e.Item, DragDropEffects.Move);
-            }
+            var draggedItem = e.Item as ListViewItem;
+            if (draggedItem == null) return;
+            modListView.DoDragDrop(GetModDragSelection(draggedItem), DragDropEffects.Move);
+        }
+
+        private List<ListViewItem> GetModDragSelection(ListViewItem clickedItem)
+        {
+            var selected = modListView.SelectedItems.Cast<ListViewItem>().ToList();
+            if (selected.Contains(clickedItem))
+                return selected;
+            return new List<ListViewItem> { clickedItem };
         }
 
         private void modListView_DragEnter(object? sender, DragEventArgs e)
         {
-            if (e.Data != null && e.Data.GetDataPresent(typeof(ListViewItem)))
-            {
-                e.Effect = DragDropEffects.Move;
-            }
-            else
+            e.Effect = (e.Data != null && e.Data.GetDataPresent(typeof(List<ListViewItem>)))
+                ? DragDropEffects.Move : DragDropEffects.None;
+        }
+
+        private void modListView_DragOver(object? sender, DragEventArgs e)
+        {
+            if (e.Data == null || !e.Data.GetDataPresent(typeof(List<ListViewItem>)))
             {
                 e.Effect = DragDropEffects.None;
+                return;
             }
+            e.Effect = DragDropEffects.Move;
+
+            Point pt = modListView.PointToClient(new Point(e.X, e.Y));
+            int newIndex = CalculateDropInsertionIndex(pt);
+            if (_dropInsertionIndex != newIndex || !_showDropLine)
+            {
+                _dropInsertionIndex = newIndex;
+                _showDropLine = true;
+                modListView.Invalidate();
+            }
+        }
+
+        private void modListView_DragLeave(object? sender, EventArgs e)
+        {
+            if (_showDropLine)
+            {
+                _showDropLine = false;
+                _dropInsertionIndex = -1;
+                modListView.Invalidate();
+            }
+        }
+
+        private int CalculateDropInsertionIndex(Point clientPt)
+        {
+            var items = modListView.Items;
+            if (items.Count == 0) return 0;
+
+            ListViewItem? hoverItem = modListView.GetItemAt(clientPt.X, clientPt.Y);
+            if (hoverItem != null)
+            {
+                int midY = hoverItem.Bounds.Top + hoverItem.Bounds.Height / 2;
+                return clientPt.Y < midY ? hoverItem.Index : hoverItem.Index + 1;
+            }
+
+            // Below the last item or on empty area
+            var lastItem = items[^1];
+            return clientPt.Y > lastItem.Bounds.Bottom ? items.Count : 0;
         }
 
         private void modListView_DragDrop(object? sender, DragEventArgs e)
         {
-            ListViewItem? draggedItem = e.Data?.GetData(typeof(ListViewItem)) as ListViewItem;
-            if (draggedItem == null) return;
+            _showDropLine = false;
+            _dropInsertionIndex = -1;
+            modListView.Invalidate();
+
+            var dragged = e.Data?.GetData(typeof(List<ListViewItem>)) as List<ListViewItem>;
+            if (dragged == null || dragged.Count == 0) return;
 
             Point dropPoint = modListView.PointToClient(new Point(e.X, e.Y));
             ListViewItem? targetItem = modListView.GetItemAt(dropPoint.X, dropPoint.Y);
+            int targetIndex = CalculateDropInsertionIndex(dropPoint);
 
-            int originalIndex = draggedItem.Index;
-            int targetIndex = (targetItem != null) ? targetItem.Index : modListView.Items.Count - 1;
+            // If the target itself is being dragged, bail out
+            if (targetItem != null && dragged.Contains(targetItem))
+                return;
 
-            if (originalIndex == targetIndex) return;
+            // Build list of (index, item) pairs sorted descending by index
+            var targeted = dragged
+                .Select(item => (index: item.Index, item))
+                .OrderByDescending(p => p.index)
+                .ToList();
 
-            modListView.Items.RemoveAt(originalIndex);
-            modListView.Items.Insert(targetIndex, draggedItem);
+            modListView.BeginUpdate();
 
-            draggedItem.Selected = true;
+            // Remove all dragged items (highest index first to preserve indices)
+            foreach (var (_, item) in targeted)
+                modListView.Items.Remove(item);
+
+            // Adjust target index for removals that happened before it
+            int insertAt = targetIndex;
+            foreach (var (idx, _) in targeted.Where(p => p.index < targetIndex))
+                insertAt--;
+
+            // Re-insert in original order
+            foreach (var item in dragged)
+                modListView.Items.Insert(insertAt++, item);
+
+            // Re-select
+            foreach (var item in dragged)
+                item.Selected = true;
+
+            modListView.EndUpdate();
             modListView.Focus();
 
-            // Sync _allModItems if not searching
+            SyncModListAfterReorder();
+        }
+
+        private void SyncModListAfterReorder()
+        {
             if (string.IsNullOrWhiteSpace(txtSearch.Text))
             {
                 _allModItems.Clear();
                 _allModItems.AddRange(modListView.Items.Cast<ListViewItem>());
             }
+            SaveModListState();
+        }
+
+        private void modListView_Paint(object? sender, PaintEventArgs e)
+        {
+            if (!_showDropLine) return;
+
+            int lineY = GetDropLineY();
+            if (lineY < 0) return;
+
+            using (var pen = new Pen(ThemeManager.CurrentTheme.AccentColor, 2))
+            {
+                e.Graphics.DrawLine(pen, 0, lineY, modListView.ClientSize.Width, lineY);
+            }
+        }
+
+        private int GetDropLineY()
+        {
+            var items = modListView.Items;
+            if (items.Count == 0) return _dropInsertionIndex == 0 ? 0 : -1;
+
+            if (_dropInsertionIndex < items.Count)
+                return items[_dropInsertionIndex].Bounds.Top;
+
+            if (_dropInsertionIndex == items.Count)
+                return items[^1].Bounds.Bottom;
+
+            return -1;
         }
 
         #endregion
@@ -3624,14 +3660,7 @@ namespace CrossworldsModManager
             {
                 Directory.CreateDirectory(targetModsDir);
 
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    Process.Start("xdg-open", $"\"{targetModsDir}\"");
-                }
-                else
-                {
-                    Process.Start("explorer.exe", targetModsDir);
-                }
+                PlatformUtils.OpenFolderInExplorer(targetModsDir);
             }
             catch (Exception ex)
             {

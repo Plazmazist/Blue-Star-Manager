@@ -1,8 +1,7 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CrossworldsModManager
@@ -11,168 +10,64 @@ namespace CrossworldsModManager
     {
         public static void BackupMods(string sourceModDirectory)
         {
-            ProgressForm progressForm = new ProgressForm("Backing up Mods");
-            
-            progressForm.Shown += (sender, e) => 
-            {
-                Task.Run(() => PerformBackup(sourceModDirectory, progressForm));
-            };
-
+            var progressForm = new ProgressForm("Backing up Mods");
+            progressForm.Shown += (sender, e) =>
+                Task.Run(() => CopyDirectoryContents(sourceModDirectory, PlatformUtils.GetModBackupDir(), "Backing up", "Backup", progressForm));
             progressForm.ShowDialog();
         }
 
-        private static void PerformBackup(string sourceModDirectory, ProgressForm form)
+        public static void RestoreModsFromBackup(string destinationModDirectory)
+        {
+            var progressForm = new ProgressForm("Restoring Mods");
+            progressForm.Shown += (sender, e) =>
+                Task.Run(() => CopyDirectoryContents(PlatformUtils.GetModBackupDir(), destinationModDirectory, "Restoring", "Restore", progressForm));
+            progressForm.ShowDialog();
+        }
+
+        private static void CopyDirectoryContents(string sourceDir, string destDir, string actionLabel, string actionName, ProgressForm form)
         {
             try
             {
-                string backupDir;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
+                if (!Directory.Exists(sourceDir))
                 {
-                    backupDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "backup");
-                }
-                else
-                {
-                    backupDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ModsTemp");
-                }
-
-                if (!Directory.Exists(backupDir))
-                {
-                    Directory.CreateDirectory(backupDir);
-                }
-
-                if (!Directory.Exists(sourceModDirectory))
-                {
-                    form.UpdateStatus("Mod directory not found!");
-                    form.ShowCompletion("Backup failed.");
+                    form.ShowCompletion($"{actionName} failed: Source directory not found.");
                     return;
                 }
 
-                string[] files = Directory.GetFiles(sourceModDirectory, "*.*", SearchOption.AllDirectories);
+                Directory.CreateDirectory(destDir);
+
+                var files = Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories);
                 int totalFiles = files.Length;
                 int processed = 0;
-
                 var token = form.TokenSource?.Token ?? CancellationToken.None;
 
                 foreach (string file in files)
                 {
                     if (token.IsCancellationRequested)
                     {
-                        form.ShowCompletion("Backup skipped.");
-                        return;
-                    }
-                    string relativePath = Path.GetRelativePath(sourceModDirectory, file);
-                    
-                    // Safety check: if drives differ, GetRelativePath returns absolute path.
-                    // In that case, we fallback to filename to avoid writing outside ModsTemp.
-                    if (Path.IsPathRooted(relativePath))
-                    {
-                        relativePath = Path.GetFileName(file);
-                    }
-
-                    string destFile = Path.Combine(backupDir, relativePath);
-                    string? destDir = Path.GetDirectoryName(destFile);
-
-                    if (destDir != null && !Directory.Exists(destDir))
-                    {
-                        Directory.CreateDirectory(destDir);
-                    }
-
-                    // Copy and overwrite existing files to update backup.
-                    // We do not delete anything from ModsTemp, ensuring safety.
-                    File.Copy(file, destFile, true);
-
-                    if (token.IsCancellationRequested)
-                    {
-                        form.ShowCompletion("Backup skipped.");
+                        form.ShowCompletion($"{actionName} skipped.");
                         return;
                     }
 
-                    processed++;
-                    int percentage = (int)((processed / (float)totalFiles) * 100);
-                    
-                    form.UpdateStatus($"Backing up: {Path.GetFileName(file)}");
-                    form.UpdateProgress(percentage);
-                }
-
-                form.ShowCompletion("Backup completed successfully!");
-            }
-            catch (Exception ex)
-            {
-                form.ShowCompletion($"Error: {ex.Message}");
-            }
-        }
-
-        public static void RestoreModsFromBackup(string destinationModDirectory)
-        {
-            ProgressForm progressForm = new ProgressForm("Restoring Mods");
-            
-            progressForm.Shown += (sender, e) => 
-            {
-                Task.Run(() => PerformRestore(destinationModDirectory, progressForm));
-            };
-
-            progressForm.ShowDialog();
-        }
-
-        private static void PerformRestore(string destinationModDirectory, ProgressForm form)
-        {
-            try
-            {
-                string backupDir;
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && Environment.GetEnvironmentVariable("APPIMAGE") != null)
-                {
-                    backupDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar", "backup");
-                }
-                else
-                {
-                    backupDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ModsTemp");
-                }
-
-                if (!Directory.Exists(backupDir))
-                {
-                    form.UpdateStatus("Backup directory not found!");
-                    form.ShowCompletion("Restore failed: No backup exists.");
-                    return;
-                }
-
-                if (!Directory.Exists(destinationModDirectory))
-                {
-                    Directory.CreateDirectory(destinationModDirectory);
-                }
-
-                string[] files = Directory.GetFiles(backupDir, "*.*", SearchOption.AllDirectories);
-                int totalFiles = files.Length;
-                int processed = 0;
-
-                foreach (string file in files)
-                {
-                    string relativePath = Path.GetRelativePath(backupDir, file);
-                    
+                    var relativePath = Path.GetRelativePath(sourceDir, file);
                     if (Path.IsPathRooted(relativePath))
-                    {
                         relativePath = Path.GetFileName(file);
-                    }
 
-                    string destFile = Path.Combine(destinationModDirectory, relativePath);
-                    string? destDir = Path.GetDirectoryName(destFile);
+                    string destFile = Path.Combine(destDir, relativePath);
+                    string? destDirPath = Path.GetDirectoryName(destFile);
 
-                    if (destDir != null && !Directory.Exists(destDir))
-                    {
-                        Directory.CreateDirectory(destDir);
-                    }
+                    if (destDirPath != null && !Directory.Exists(destDirPath))
+                        Directory.CreateDirectory(destDirPath);
 
                     File.Copy(file, destFile, true);
 
                     processed++;
                     int percentage = (int)((processed / (float)totalFiles) * 100);
-                    
-                    form.UpdateStatus($"Restoring: {Path.GetFileName(file)}");
+                    form.UpdateStatus($"{actionLabel}: {Path.GetFileName(file)}");
                     form.UpdateProgress(percentage);
                 }
 
-                form.ShowCompletion("Restore completed successfully!");
+                form.ShowCompletion($"{actionName} completed successfully!");
             }
             catch (Exception ex)
             {

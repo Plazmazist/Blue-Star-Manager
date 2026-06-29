@@ -1,0 +1,107 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+
+namespace CrossworldsModManager
+{
+    public static class PlatformUtils
+    {
+        public static bool IsAppImage => RuntimeInformation.IsOSPlatform(OSPlatform.Linux) &&
+                                         Environment.GetEnvironmentVariable("APPIMAGE") != null;
+
+        public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        public static bool IsLinux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+        public static string AppDataDir
+        {
+            get
+            {
+                var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "bluestar");
+                if (IsAppImage && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                return dir;
+            }
+        }
+
+        public static string AppDataDataDir
+        {
+            get
+            {
+                var dir = Path.Combine(AppDataDir, "data");
+                if (IsAppImage && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+                return dir;
+            }
+        }
+
+        public static string GetBaseDir()
+        {
+            return IsAppImage ? AppDataDir : AppDomain.CurrentDomain.BaseDirectory;
+        }
+
+        public static string GetDataDir()
+        {
+            return IsAppImage ? AppDataDataDir : AppDomain.CurrentDomain.BaseDirectory;
+        }
+
+        public static string GetToolsDir()
+        {
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
+        }
+
+        public static string GetWorkDir()
+        {
+            return IsAppImage ? AppDataDataDir : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools");
+        }
+
+        public static string GetModBackupDir()
+        {
+            return IsAppImage
+                ? Path.Combine(AppDataDir, "backup")
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ModsTemp");
+        }
+
+        public static string GetPromoFlagPath(string flagName)
+        {
+            return IsAppImage
+                ? Path.Combine(AppDataDir, flagName)
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, flagName);
+        }
+
+        public static string GetLocresModOutputRoot()
+        {
+            return IsAppImage
+                ? Path.Combine(AppDataDataDir, "LocresMod", "UNION", "Content", "Localization", "Game")
+                : Path.Combine(GetToolsDir(), "LocresMod", "UNION", "Content", "Localization", "Game");
+        }
+
+        public static string GetLocresModPakPath()
+        {
+            return IsAppImage
+                ? Path.Combine(AppDataDataDir, "LocresMod.pak")
+                : Path.Combine(GetToolsDir(), "LocresMod.pak");
+        }
+
+        public static string GetMergedJsonDir()
+        {
+            return IsAppImage ? AppDataDataDir : GetToolsDir();
+        }
+
+        public static string GetSettingsFilePath()
+        {
+            return IsAppImage
+                ? Path.Combine(AppDataDir, "settings.json")
+                : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+        }
+
+        public static void OpenFolderInExplorer(string path)
+        {
+            if (IsLinux)
+                Process.Start("xdg-open", $"\"{path}\"");
+            else
+                Process.Start("explorer.exe", path);
+        }
+    }
+}

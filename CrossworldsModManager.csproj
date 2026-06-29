@@ -24,6 +24,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Tools\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="EnsureToolsDir" AfterTargets="Build">
+    <MakeDir Directories="$(TargetDir)Tools" />
+  </Target>
+
+  <ItemGroup>
     <EmbeddedResource Include="question_mark.png" />
     <EmbeddedResource Include="blue_i.png" />
     <EmbeddedResource Include="yellow_exclamation_point.png" />

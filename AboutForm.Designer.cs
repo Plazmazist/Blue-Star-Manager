@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace CrossworldsModManager
 {
     partial class AboutForm
@@ -41,9 +39,9 @@ namespace CrossworldsModManager
             this.labelInfo.ForeColor = System.Drawing.Color.Gainsboro;
             this.labelInfo.Location = new System.Drawing.Point(13, 40);
             this.labelInfo.Name = "labelInfo";
-            this.labelInfo.Size = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? new System.Drawing.Size(359, 145) : new System.Drawing.Size(359, 115);
+            this.labelInfo.Size = PlatformUtils.IsLinux ? new System.Drawing.Size(359, 145) : new System.Drawing.Size(359, 115);
             this.labelInfo.TabIndex = 1;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (PlatformUtils.IsLinux)
             {
                 this.labelInfo.Text = "Coded by RED1 in C# using .NET and Windows Forms.\r\nPorted to Linux by AntiApple4life\r\n\r\nAcknowledgements:\r\nLocResUti" +
                                       "lity by anubi47 (github.com/anubi47/LocResUtility)\r\nrepak by trumank (https://github.com/trumank/repak)\r\nSharpCompress" +
@@ -64,7 +62,7 @@ namespace CrossworldsModManager
             this.buttonOK.FlatAppearance.BorderSize = 0;
             this.buttonOK.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonOK.ForeColor = System.Drawing.Color.White;
-            this.buttonOK.Location = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? new System.Drawing.Point(297, 205) : new System.Drawing.Point(297, 165);
+            this.buttonOK.Location = PlatformUtils.IsLinux ? new System.Drawing.Point(297, 205) : new System.Drawing.Point(297, 165);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(75, 23);
             this.buttonOK.TabIndex = 2;
@@ -75,7 +73,7 @@ namespace CrossworldsModManager
             // 
             this.labelIconCredit.AutoSize = true;
             this.labelIconCredit.ForeColor = System.Drawing.Color.Gainsboro;
-            this.labelIconCredit.Location = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? this.labelIconCredit.Location = new System.Drawing.Point(13, 205) : new System.Drawing.Point(13, 165);
+            this.labelIconCredit.Location = PlatformUtils.IsLinux ? new System.Drawing.Point(13, 205) : new System.Drawing.Point(13, 165);
             this.labelIconCredit.Name = "labelIconCredit";
             this.labelIconCredit.Size = new System.Drawing.Size(75, 13);
             this.labelIconCredit.TabIndex = 3;
@@ -87,7 +85,7 @@ namespace CrossworldsModManager
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(45)))), ((int)(((byte)(45)))), ((int)(((byte)(48)))));
-            this.ClientSize = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? this.ClientSize = new System.Drawing.Size(384, 240) :new System.Drawing.Size(384, 200);
+            this.ClientSize = PlatformUtils.IsLinux ? new System.Drawing.Size(384, 240) : new System.Drawing.Size(384, 200);
             this.Controls.Add(this.buttonOK);
             this.Controls.Add(this.labelIconCredit);
             this.Controls.Add(this.labelInfo);

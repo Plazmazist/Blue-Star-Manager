@@ -2,7 +2,6 @@
 using System;
 using System.Drawing;
 using System.Media;
-using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Windows.Forms;
 
@@ -60,7 +59,7 @@ namespace CrossworldsModManager
                 form.KeyPreview = true; // Enable key preview for Ctrl+C
 
                 // Play system sound
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (PlatformUtils.IsWindows)
                 {
                     try
                     {

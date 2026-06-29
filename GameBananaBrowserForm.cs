@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -243,7 +242,7 @@ namespace CrossworldsModManager
         private void OnModDownloadClicked(GameBananaMod mod)
         {
             // Open a new form to show mod details and download options
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (PlatformUtils.IsLinux)
             {
                 using (var modDetailsForm = new ModDetailsFormLinux(mod, _logger, _onModsChanged))
                 {

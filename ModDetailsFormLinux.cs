@@ -43,7 +43,7 @@ namespace CrossworldsModManager
             _onModsChanged = onModsChanged;
             InitializeComponent();
             // Set the form's icon from the executable's embedded icon.
-            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (PlatformUtils.IsWindows)
             {
                 this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
             }
