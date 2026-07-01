@@ -18,6 +18,7 @@ namespace CrossworldsModManager
         private void InitializeComponent()
         {
             this.label1 = new System.Windows.Forms.Label();
+            this.cmbPlatformType = new System.Windows.Forms.ComboBox();
             this.txtGameDir = new System.Windows.Forms.TextBox();
             this.btnBrowseGameDir = new System.Windows.Forms.Button();
             this.btnBrowseModsDir = new System.Windows.Forms.Button();
@@ -47,14 +48,28 @@ namespace CrossworldsModManager
             this.label1.Text = "Game Directory:";
             this.label1.ForeColor = System.Drawing.Color.Gainsboro;
             // 
+            // cmbPlatformType
+            // 
+            this.cmbPlatformType = new System.Windows.Forms.ComboBox();
+            this.cmbPlatformType.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
+            this.cmbPlatformType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbPlatformType.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.cmbPlatformType.ForeColor = System.Drawing.Color.White;
+            this.cmbPlatformType.FormattingEnabled = true;
+            this.cmbPlatformType.Items.AddRange(new object[] { "Steam", "Custom" });
+            this.cmbPlatformType.Location = new System.Drawing.Point(96, 10);
+            this.cmbPlatformType.Name = "cmbPlatformType";
+            this.cmbPlatformType.Size = new System.Drawing.Size(70, 21);
+            this.cmbPlatformType.TabIndex = 1;
+            // 
             // txtGameDir
             // 
             this.txtGameDir.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtGameDir.Location = new System.Drawing.Point(102, 12);
+            this.txtGameDir.Location = new System.Drawing.Point(170, 12);
             this.txtGameDir.Name = "txtGameDir";
             this.txtGameDir.Size = new System.Drawing.Size(389, 20);
-            this.txtGameDir.TabIndex = 1;
+            this.txtGameDir.TabIndex = 3;
             this.txtGameDir.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
             this.txtGameDir.ForeColor = System.Drawing.Color.White;
             // 
@@ -64,7 +79,7 @@ namespace CrossworldsModManager
             this.btnBrowseGameDir.Location = new System.Drawing.Point(497, 10);
             this.btnBrowseGameDir.Name = "btnBrowseGameDir";
             this.btnBrowseGameDir.Size = new System.Drawing.Size(75, 23);
-            this.btnBrowseGameDir.TabIndex = 2;
+            this.btnBrowseGameDir.TabIndex = 24;
             this.btnBrowseGameDir.Text = "Browse...";
             this.btnBrowseGameDir.UseVisualStyleBackColor = false;
             this.btnBrowseGameDir.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(63)))), ((int)(((byte)(63)))), ((int)(((byte)(70)))));
@@ -279,6 +294,7 @@ namespace CrossworldsModManager
             this.Controls.Add(this.label2);
             this.Controls.Add(this.btnBrowseGameDir);
             this.Controls.Add(this.txtGameDir);
+            this.Controls.Add(this.cmbPlatformType);
             this.Controls.Add(this.label1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -315,5 +331,6 @@ namespace CrossworldsModManager
         private System.Windows.Forms.Label lblTheme;
         private System.Windows.Forms.ComboBox cmbTheme;
         private System.Windows.Forms.Button btnCustomizeTheme;
+        private System.Windows.Forms.ComboBox cmbPlatformType;
     }
 }

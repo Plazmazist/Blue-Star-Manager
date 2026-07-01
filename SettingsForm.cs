@@ -15,7 +15,14 @@ namespace CrossworldsModManager
 
         private void SettingsForm_Load(object sender, EventArgs e)
         {
-            if (!string.IsNullOrEmpty(SettingsManager.Settings.GameDirectory) && !string.IsNullOrEmpty(SettingsManager.Settings.GameExecutableName))
+            var platformType = SettingsManager.Settings.PreferredLaunchPlatform;
+            cmbPlatformType.SelectedItem = (platformType == "Custom") ? "Custom" : "Steam";
+
+            if (platformType == "Custom")
+            {
+                txtGameDir.Text = SettingsManager.Settings.CustomUnionDirectory;
+            }
+            else if (!string.IsNullOrEmpty(SettingsManager.Settings.GameDirectory) && !string.IsNullOrEmpty(SettingsManager.Settings.GameExecutableName))
             {
                 txtGameDir.Text = Path.Combine(SettingsManager.Settings.GameDirectory, SettingsManager.Settings.GameExecutableName);
             }
@@ -23,6 +30,7 @@ namespace CrossworldsModManager
             {
                 txtGameDir.Text = SettingsManager.Settings.GameDirectory;
             }
+
             txtModsDir.Text = SettingsManager.Settings.ModsDirectory;
             chkSortEnabled.Checked = SettingsManager.Settings.SortEnabledModsToTop;
             chkAutoClean.Checked = SettingsManager.Settings.AutoCleanTemporaryFiles;
@@ -59,25 +67,57 @@ namespace CrossworldsModManager
 
         private void btnBrowseGameDir_Click(object sender, EventArgs e)
         {
-            Dictionary<string, string> filters = new Dictionary<string, string>
+            bool isCustom = cmbPlatformType.SelectedItem?.ToString() == "Custom";
+
+            if (isCustom)
             {
-                {"Game Executable", "exe"}
-            };
-            // TODO: add titlebar text when NativeFileDialogs supports it
-            NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
-            
-            if (result == NfdStatus.Ok)
+                CustomMessageBox.Show(
+                    "Please select the 'UNION' folder inside your game installation directory.\n\n" +
+                    "This is typically located at:\n" +
+                    "  [Game Root]/UNION\n\n" +
+                    "The app will automatically detect the executable and other paths from there.",
+                    "Select UNION Folder",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                NfdStatus result = Nfd.PickFolder(out string? dirPath);
+
+                if (result == NfdStatus.Ok && dirPath != null)
+                {
+                    var dirName = new DirectoryInfo(dirPath).Name;
+                    if (!dirName.Equals("UNION", StringComparison.OrdinalIgnoreCase))
+                    {
+                        CustomMessageBox.Show(
+                            "The selected folder must be named 'UNION'.\n\n" +
+                            "Please select the UNION folder inside your game installation.",
+                            "Invalid Selection",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+                    txtGameDir.Text = dirPath;
+                }
+            }
+            else
             {
-                if (fileName == null) return;
-                txtGameDir.Text = fileName;
+                Dictionary<string, string> filters = new Dictionary<string, string>
+                {
+                    {"Game Executable", "exe"}
+                };
+                NfdStatus result = Nfd.OpenDialog(out string? fileName, filters);
+
+                if (result == NfdStatus.Ok)
+                {
+                    if (fileName == null) return;
+                    txtGameDir.Text = fileName;
+                }
             }
         }
 
         private void btnBrowseModsDir_Click(object sender, EventArgs e)
         {
-            // TODO: add titlebar text when NativeFileDialogs supports it
             NfdStatus result = Nfd.PickFolder(out string? dirPath);
-            
+
             while (true)
             {
                 if (result == NfdStatus.Ok)
@@ -97,18 +137,30 @@ namespace CrossworldsModManager
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            string inputPath = txtGameDir.Text;
-            if (File.Exists(inputPath))
+            bool isCustom = cmbPlatformType.SelectedItem?.ToString() == "Custom";
+            SettingsManager.Settings.PreferredLaunchPlatform = isCustom ? "Custom" : "Steam";
+
+            if (isCustom)
             {
-                SettingsManager.Settings.GameDirectory = Path.GetDirectoryName(inputPath);
-                SettingsManager.Settings.GameExecutableName = Path.GetFileName(inputPath);
+                SettingsManager.Settings.CustomUnionDirectory = txtGameDir.Text;
+                SettingsManager.Settings.GameDirectory = null;
+                SettingsManager.Settings.GameExecutableName = null;
             }
             else
             {
-                // Fallback if user entered a directory manually or cleared it
-                SettingsManager.Settings.GameDirectory = inputPath;
-                if (string.IsNullOrEmpty(SettingsManager.Settings.GameExecutableName))
-                    SettingsManager.Settings.GameExecutableName = "SonicRacingCrossWorlds.exe";
+                SettingsManager.Settings.CustomUnionDirectory = null;
+                string inputPath = txtGameDir.Text;
+                if (File.Exists(inputPath))
+                {
+                    SettingsManager.Settings.GameDirectory = Path.GetDirectoryName(inputPath);
+                    SettingsManager.Settings.GameExecutableName = Path.GetFileName(inputPath);
+                }
+                else
+                {
+                    SettingsManager.Settings.GameDirectory = inputPath;
+                    if (string.IsNullOrEmpty(SettingsManager.Settings.GameExecutableName))
+                        SettingsManager.Settings.GameExecutableName = "SonicRacingCrossWorlds.exe";
+                }
             }
 
             SettingsManager.Settings.ModsDirectory = txtModsDir.Text;
@@ -132,6 +184,7 @@ namespace CrossworldsModManager
             {
                 SettingsManager.Settings.DoNotWarnUnsavedChanges = chkWarn.Checked;
             }
+
             var cmbThemeControl = this.Controls.Find("cmbTheme", true);
             if (cmbThemeControl.Length > 0 && cmbThemeControl[0] is ComboBox cmbTheme && cmbTheme.SelectedItem != null)
             {

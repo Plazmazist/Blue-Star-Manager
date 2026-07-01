@@ -55,6 +55,7 @@ namespace CrossworldsModManager
         public List<string> FavoritePaths { get; set; } = new();
 
         public string? UsmapVersion { get; set; }
+        public string? CustomUnionDirectory { get; set; }
     }
 
     public class SerializableTheme

@@ -432,6 +432,16 @@ namespace CrossworldsModManager
                 UpdateStatus($"Automatically set game directory to: {firstInstall.Value.Path}");
             }
         
+            // Register custom (non-Steam) installation if configured
+            if (!string.IsNullOrEmpty(SettingsManager.Settings.CustomUnionDirectory))
+            {
+                var customGameRoot = Path.GetDirectoryName(SettingsManager.Settings.CustomUnionDirectory.TrimEnd('\\', '/'));
+                if (!string.IsNullOrEmpty(customGameRoot) && Directory.Exists(customGameRoot))
+                {
+                    _gameInstallations["Custom"] = (customGameRoot, null);
+                }
+            }
+        
             launchPlatformDropDown.DropDownItems.Clear();
         
             // Always provide options for Steam, using detected paths or falling back to the settings path.
@@ -444,6 +454,17 @@ namespace CrossworldsModManager
                 item.ForeColor = Color.White;
                 item.BackColor = Color.FromArgb(45, 45, 48);
                 launchPlatformDropDown.DropDownItems.Add(item);
+            }
+        
+            // Add Custom platform option if configured
+            if (_gameInstallations.ContainsKey("Custom"))
+            {
+                var customPlatformItem = new ToolStripMenuItem("Custom");
+                customPlatformItem.Tag = "Custom";
+                customPlatformItem.Click += PlatformMenuItem_Click;
+                customPlatformItem.ForeColor = Color.White;
+                customPlatformItem.BackColor = Color.FromArgb(45, 45, 48);
+                launchPlatformDropDown.DropDownItems.Add(customPlatformItem);
             }
         
             // Always add "Executable" option.
@@ -504,6 +525,19 @@ namespace CrossworldsModManager
                         SettingsManager.Save();
                     }
                     else return;
+                }
+            }
+            else if (platform == "Custom")
+            {
+                if (!string.IsNullOrEmpty(SettingsManager.Settings.CustomUnionDirectory))
+                {
+                    var gameRoot = Path.GetDirectoryName(SettingsManager.Settings.CustomUnionDirectory.TrimEnd('\\', '/'));
+                    if (!string.IsNullOrEmpty(gameRoot))
+                    {
+                        SettingsManager.Settings.GameDirectory = gameRoot;
+                        SettingsManager.Settings.GameExecutableName = null;
+                        SettingsManager.Save();
+                    }
                 }
             }
 
@@ -1012,6 +1046,24 @@ namespace CrossworldsModManager
                         CustomMessageBox.Show($"Executable not found at:\n{exePath}", "Launch Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     return; // Return early as we don't use launchUrl for this case
+                }
+                else if (_selectedPlatform == "Custom")
+                {
+                    string customUnionDir = SettingsManager.Settings.CustomUnionDirectory ?? "";
+                    var win64Dir = Path.Combine(customUnionDir, "Binaries", "Win64");
+                    if (!Directory.Exists(win64Dir))
+                    {
+                        CustomMessageBox.Show($"Binaries directory not found at:\n{win64Dir}", "Launch Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    var exeFiles = Directory.GetFiles(win64Dir, "*SonicRacing*.exe", SearchOption.TopDirectoryOnly);
+                    if (exeFiles.Length == 0)
+                    {
+                        CustomMessageBox.Show($"No SonicRacing executable found in:\n{win64Dir}", "Launch Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    Process.Start(new ProcessStartInfo(exeFiles[0]) { UseShellExecute = true });
+                    return;
                 }
 
                 Process.Start(new ProcessStartInfo(launchUrl) { UseShellExecute = true });
