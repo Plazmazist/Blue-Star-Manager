@@ -792,6 +792,17 @@ namespace CrossworldsModManager
                 {
                     // Run the full merge/pack process since there are JSON mods.
                     progressBarProgress.Report(20);
+
+                    // Extract base localization files from game archives
+                    var extractGamePath = !string.IsNullOrEmpty(_selectedPlatform) && _gameInstallations.TryGetValue(_selectedPlatform, out var extractGameInfo)
+                        ? extractGameInfo.Path
+                        : SettingsManager.Settings.GameDirectory;
+                    if (!string.IsNullOrEmpty(extractGamePath))
+                    {
+                        var locresOutput = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tools", "Locres");
+                        await Cue4ParseProvider.ExtractLocalizationAsync(extractGamePath, locresOutput, progress);
+                    }
+
                     var installTask = InstallModsAsync();
                     // Pass the list of mods that we've already determined have active JSON files.
                     // This prevents the converter from having to re-scan all mods.

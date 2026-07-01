@@ -53,6 +53,8 @@ namespace CrossworldsModManager
         public bool SuppressExFatWarning { get; set; } = false;
         public string? LastFileBrowserPath { get; set; }
         public List<string> FavoritePaths { get; set; } = new();
+
+        public string? UsmapVersion { get; set; }
     }
 
     public class SerializableTheme
