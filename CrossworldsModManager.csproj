@@ -32,10 +32,10 @@
   </Target>
 
   <ItemGroup>
-    <EmbeddedResource Include="question_mark.png" />
-    <EmbeddedResource Include="blue_i.png" />
-    <EmbeddedResource Include="yellow_exclamation_point.png" />
-    <EmbeddedResource Include="red_x.png" />
+    <EmbeddedResource Include="Resources\question_mark.png" />
+    <EmbeddedResource Include="Resources\blue_i.png" />
+    <EmbeddedResource Include="Resources\yellow_exclamation_point.png" />
+    <EmbeddedResource Include="Resources\red_x.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,7 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="updater\**" />
+    <Compile Remove="Updater\**" />
   </ItemGroup>
 
 </Project>

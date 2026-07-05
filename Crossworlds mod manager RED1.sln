@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrossworldsModManager", "CrossworldsModManager.csproj", "{77B19963-83F1-31C9-4AC7-277E2114CDEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updater", "updater\updater.csproj", "{EDA1EC49-5364-401A-982A-A4974AE2B578}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{EDA1EC49-5364-401A-982A-A4974AE2B578}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -202,10 +202,10 @@ namespace CrossworldsModManager
             string resourceName = "";
             switch (icon)
             {
-                case MessageBoxIcon.Error: resourceName = "CrossworldsModManager.red_x.png"; break;
-                case MessageBoxIcon.Question: resourceName = "CrossworldsModManager.question_mark.png"; break;
-                case MessageBoxIcon.Warning: resourceName = "CrossworldsModManager.yellow_exclamation_point.png"; break;
-                case MessageBoxIcon.Information: resourceName = "CrossworldsModManager.blue_i.png"; break;
+                case MessageBoxIcon.Error: resourceName = "CrossworldsModManager.Resources.red_x.png"; break;
+                case MessageBoxIcon.Question: resourceName = "CrossworldsModManager.Resources.question_mark.png"; break;
+                case MessageBoxIcon.Warning: resourceName = "CrossworldsModManager.Resources.yellow_exclamation_point.png"; break;
+                case MessageBoxIcon.Information: resourceName = "CrossworldsModManager.Resources.blue_i.png"; break;
             }
 
             if (!string.IsNullOrEmpty(resourceName))
